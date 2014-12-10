@@ -9,8 +9,12 @@ var system = components.system({
   'D': component('B', ['A', 'B']),
 });
 
-system.start();
-system.stop();
+system.start(function (err, ctx) {
+    console.log('Started: ', ctx);
+});
+system.stop(function (err, ctx) {
+    console.log('Stopped: ', ctx);
+});
 
 
 function component(name, deps) {

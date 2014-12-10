@@ -1,10 +1,10 @@
 'use strict';
 
 module.exports = {
-    system: function() {
+    system: function () {
         return {
             start: function () {},
-            stop: function() {}
+            stop: function () {}
         };
     }
 };
