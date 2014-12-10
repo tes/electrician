@@ -151,6 +151,37 @@ describe('System', function () {
         });
     });
 
+    it('should return error when wiring cyclical dependencies on start', function (done) {
+        var system = components.system({
+            'A': component('B'),
+            'B': component('A')
+        });
+
+        system.start(function (err, ctx) {
+            expect(err.message).to.match(/^Cyclic dependency found/);
+            done();
+        });
+    });
+
+    it('should return error when wiring cyclical dependencies on stop', function (done) {
+        var A = component();
+        var B = component('A');
+        var system = components.system({
+            'A': A,
+            'B': B
+        });
+
+        system.start(function (err) {
+            if (err) return done(err);
+
+            A.dependsOn = 'B';
+            system.stop(function (err) {
+                expect(err.message).to.match(/^Cyclic dependency found/);
+                done();
+            });
+        });
+    });
+
     function component(deps) {
         var state = {
             started: false,

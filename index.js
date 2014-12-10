@@ -17,27 +17,53 @@ function system(components) {
 
     function start(next) {
         ctx = {};
-        async.reduce(startSequence(components), ctx, function (acc, key, next) {
-            if (!components[key].start) return next(null, acc);
-            components[key].start(acc, function (err, started) {
-                if (err) return next(err);
-                next(null, _.assign(acc, toObject(key, started)));
-            });
-        }, next);
+        startSequence(components, function (err, sequence) {
+            if (err) return next(err);
+
+            async.reduce(sequence, ctx, function (acc, key, next) {
+                if (!components[key].start) return next(null, acc);
+                components[key].start(acc, function (err, started) {
+                    if (err) return next(err);
+                    next(null, _.assign(acc, toObject(key, started)));
+                });
+            }, next);
+        });
     }
 
     function stop(next) {
-        async.eachSeries(stopSequence(components), function(key, next) {
-            if (!components[key].stop) return next();
-            components[key].stop(ctx, next);
-        }, function(err) {
+        stopSequence(components, function (err, sequence) {
             if (err) return next(err);
-            next(null, ctx);
+
+            async.eachSeries(sequence, function(key, next) {
+                if (!components[key].stop) return next();
+                components[key].stop(ctx, next);
+            }, function(err) {
+                if (err) return next(err);
+                next(null, ctx);
+            });
         });
     }
 }
 
-function startSequence(components) {
+function startSequence(components, next) {
+    try {
+        next(null, startSequenceSync(components));
+    }
+    catch (err) {
+        next(err);
+    }
+}
+
+function stopSequence(components, next) {
+    try {
+        next(null, startSequenceSync(components).reverse());
+    }
+    catch (err) {
+        next(err);
+    }
+}
+
+function startSequenceSync(components) {
     var nameDeps = _.map(_.pairs(components), function (pair) {
         return [_.head(pair), _.last(pair).dependsOn];
     });
@@ -56,10 +82,6 @@ function startSequence(components) {
         .reverse()
         .concat(noDeps)
     );
-}
-
-function stopSequence(components) {
-    return startSequence(components).reverse();
 }
 
 function toObject(key, value) {
