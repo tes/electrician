@@ -14,6 +14,11 @@ describe('Components', function () {
 });
 
 describe('System', function () {
+    var counter;
+
+    beforeEach(function() {
+        counter = 0;
+    });
 
     it('should have start/stop methods', function () {
         var system = components.system({});
@@ -26,4 +31,58 @@ describe('System', function () {
         expect(system.start.length).to.be(1);
         expect(system.stop.length).to.be(1);
     });
+
+    it('should start a single component', function (done) {
+        var system = components.system({
+            'comp': component()
+        });
+
+        system.start(function (err, ctx) {
+            expect(ctx.comp.started).to.be(true);
+            done();
+        });
+    });
+
+    it('should start multiple components', function (done) {
+        var system = components.system({
+            'one': component(),
+            'two': component()
+        });
+
+        system.start(function (err, ctx) {
+            expect(ctx.one.started).to.be(true);
+            expect(ctx.two.started).to.be(true);
+            done();
+        });
+    });
+
+    it.skip('should start multiple components in dependency order', function (done) {
+        var system = components.system({
+            'one': component(),
+            'two': component()
+        });
+
+        system.start(function (err, ctx) {
+            expect(ctx.one.started).to.be(true);
+            expect(ctx.two.started).to.be(true);
+            done();
+        });
+    });
+
+    function component() {
+        var state = {
+            started: false
+        };
+
+        return {
+            start: function(ctx, next) {
+                state.started = true;
+                state.sequence = counter++;
+                next(null, state)
+            },
+            state: state
+        };
+    }
 });
+
+
