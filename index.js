@@ -18,6 +18,7 @@ function system(components) {
     function start(next) {
         ctx = {};
         async.reduce(startSequence(components), ctx, function (acc, key, next) {
+            if (!components[key].start) return next(null, acc);
             components[key].start(acc, function (err, started) {
                 if (err) return next(err);
                 next(null, _.assign(acc, toObject(key, started)));
@@ -27,6 +28,7 @@ function system(components) {
 
     function stop(next) {
         async.eachSeries(stopSequence(components), function(key, next) {
+            if (!components[key].stop) return next();
             components[key].stop(ctx, next);
         }, function(err) {
             if (err) return next(err);

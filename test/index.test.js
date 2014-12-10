@@ -2,6 +2,7 @@
 
 var expect = require('expect.js');
 var async = require('async');
+var _ = require('lodash');
 
 var components = require('..');
 
@@ -120,6 +121,32 @@ describe('System', function () {
             expect(ctx.two.stopSequence).to.be(3);
             //standalone - order consequential
             expect(ctx.three.stopSequence).to.be(1);
+            done();
+        });
+    });
+
+    it('should not attempt to start components without start method', function (done) {
+        var system = components.system({
+            'comp': _.omit(component(), 'start')
+        });
+
+        system.start(function (err, ctx) {
+            expect(ctx.comp).to.not.be.ok();
+            done();
+        });
+    });
+
+    it('should not attempt to stop components without stop method', function (done) {
+        var system = components.system({
+            'comp': _.omit(component(), 'stop')
+        });
+
+        async.series([
+            system.start,
+            system.stop
+        ], function (err, result) {
+            var ctx = result.pop();
+            expect(ctx.comp.stopped).to.be(false);
             done();
         });
     });
