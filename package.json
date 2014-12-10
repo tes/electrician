@@ -11,7 +11,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "lodash": "^2.4.1",
-    "toposort": "^0.2.10"
+    "toposort-class": "^0.3.1"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",

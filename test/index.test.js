@@ -5,19 +5,16 @@ var expect = require('expect.js');
 var components = require('..');
 
 describe('Components', function () {
-
     it('should create an empty system', function () {
         expect(components.system({})).to.be.an('object');
     });
-
-
 });
 
 describe('System', function () {
     var counter;
 
     beforeEach(function() {
-        counter = 0;
+        counter = 1;
     });
 
     it('should have start/stop methods', function () {
@@ -56,25 +53,28 @@ describe('System', function () {
         });
     });
 
-    it.skip('should start multiple components in dependency order', function (done) {
+    it('should start multiple components in dependency order', function (done) {
         var system = components.system({
-            'one': component(),
-            'two': component()
+            'one': component('two'),
+            'two': component(),
+            'three': component()
         });
 
         system.start(function (err, ctx) {
-            expect(ctx.one.started).to.be(true);
-            expect(ctx.two.started).to.be(true);
+            expect(ctx.one.sequence).to.be(2);
+            expect(ctx.two.sequence).to.be(1);
+            expect(ctx.three.started).to.be(true); //standalone - order not important
             done();
         });
     });
 
-    function component() {
+    function component(deps) {
         var state = {
             started: false
         };
 
         return {
+            dependsOn: deps,
             start: function(ctx, next) {
                 state.started = true;
                 state.sequence = counter++;
