@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha -R spec test/*"
   },
   "author": "",
   "license": "ISC",
@@ -12,7 +12,7 @@
     "toposort": "^0.2.10"
   },
   "devDependencies": {
-    "expect": "^1.1.0",
+    "expect.js": "^0.3.1",
     "mocha": "^2.0.1"
   }
 }

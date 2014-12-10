@@ -3,8 +3,8 @@
 module.exports = {
     system: function () {
         return {
-            start: function () {},
-            stop: function () {}
+            start: function (next) {},
+            stop: function (next) {}
         };
     }
 };
