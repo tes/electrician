@@ -9,24 +9,34 @@ module.exports = {
 };
 
 function system(components) {
+    var ctx = {};
     return {
         start: start,
-        stop: function (next) {}
+        stop: stop
     };
 
     function start(next) {
-        var ctx = {};
-        async.reduce(startSequence(components), {}, function (acc, key, next) {
-            components[key].start(_.clone(acc), function (err, started) {
+        ctx = {};
+        async.reduce(startSequence(components), ctx, function (acc, key, next) {
+            components[key].start(acc, function (err, started) {
                 if (err) return next(err);
-                next(null, _.assign({}, acc, toObject(key, started)));
+                next(null, _.assign(acc, toObject(key, started)));
             });
         }, next);
+    }
+
+    function stop(next) {
+        async.eachSeries(stopSequence(components), function(key, next) {
+            components[key].stop(ctx, next);
+        }, function(err) {
+            if (err) return next(err);
+            next(null, ctx);
+        });
     }
 }
 
 function startSequence(components) {
-    var nameDeps = _.map(_.pairs(components), function(pair) {
+    var nameDeps = _.map(_.pairs(components), function (pair) {
         return [_.head(pair), _.last(pair).dependsOn];
     });
     var withDeps = _.filter(nameDeps, _.last);
@@ -44,6 +54,10 @@ function startSequence(components) {
         .reverse()
         .concat(noDeps)
     );
+}
+
+function stopSequence(components) {
+    return startSequence(components).reverse();
 }
 
 function toObject(key, value) {

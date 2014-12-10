@@ -1,6 +1,7 @@
 'use strict';
 
 var expect = require('expect.js');
+var async = require('async');
 
 var components = require('..');
 
@@ -11,10 +12,12 @@ describe('Components', function () {
 });
 
 describe('System', function () {
-    var counter;
+    var startCounter;
+    var stopCounter;
 
-    beforeEach(function() {
-        counter = 1;
+    beforeEach(function () {
+        startCounter = 1;
+        stopCounter = 1;
     });
 
     it('should have start/stop methods', function () {
@@ -61,24 +64,83 @@ describe('System', function () {
         });
 
         system.start(function (err, ctx) {
-            expect(ctx.one.sequence).to.be(2);
-            expect(ctx.two.sequence).to.be(1);
-            expect(ctx.three.started).to.be(true); //standalone - order not important
+            expect(ctx.one.startSequence).to.be(2);
+            expect(ctx.two.startSequence).to.be(1);
+            //standalone - order consequential
+            expect(ctx.three.startSequence).to.be(3);
+            done();
+        });
+    });
+
+    it('should stop a single component', function (done) {
+        var system = components.system({
+            'comp': component()
+        });
+
+        async.series([
+            system.start,
+            system.stop
+        ], function (err, result) {
+            var ctx = result.pop();
+            expect(ctx.comp.stopped).to.be(true);
+            done();
+        });
+    });
+
+    it('should stop multiple components', function (done) {
+        var system = components.system({
+            'one': component(),
+            'two': component()
+        });
+
+        async.series([
+            system.start,
+            system.stop
+        ], function (err, result) {
+            var ctx = result.pop();
+            expect(ctx.one.stopped).to.be(true);
+            expect(ctx.two.stopped).to.be(true);
+            done();
+        });
+    });
+
+    it('should stop multiple components in dependency order', function (done) {
+        var system = components.system({
+            'one': component('two'),
+            'two': component(),
+            'three': component()
+        });
+
+        async.series([
+            system.start,
+            system.stop
+        ], function (err, result) {
+            var ctx = result.pop();
+            expect(ctx.one.stopSequence).to.be(2);
+            expect(ctx.two.stopSequence).to.be(3);
+            //standalone - order consequential
+            expect(ctx.three.stopSequence).to.be(1);
             done();
         });
     });
 
     function component(deps) {
         var state = {
-            started: false
+            started: false,
+            stopped: false
         };
 
         return {
             dependsOn: deps,
-            start: function(ctx, next) {
+            start: function (ctx, next) {
                 state.started = true;
-                state.sequence = counter++;
+                state.startSequence = startCounter++;
                 next(null, state)
+            },
+            stop: function (ctx, next) {
+                state.stopped = true;
+                state.stopSequence = stopCounter++;
+                next(null, state);
             },
             state: state
         };
