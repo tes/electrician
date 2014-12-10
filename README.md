@@ -1,12 +1,11 @@
-Components
-==========
-> Because one module system is not enough.
+Electrician
+===========
+> ... will sort out your wiring.
 
 Usage
 -----
 
 Please don't yet.
-
 
 
 ### Example
@@ -15,12 +14,12 @@ Please don't yet.
 
 ```
     +---+      +---+      +---+
-    | A |<----+| B |<----+| C |
+    | A |<----+| C |<----+| D |
     +---+      +---+      +---+
       ^          ^
       |          |
       |        +---+
-      +-------+| D |
+      +-------+| B |
                +---+
 ```
 
@@ -29,13 +28,13 @@ Please don't yet.
 ```js
 'use strict';
 
-var components = require('components');
+var electrician = require('electrician');
 
-var system = components.system({
+var system = electrician.system({
   'A': component('A'),
-  'B': component('B', ['A']),
-  'C': component('C', ['B']),
-  'D': component('D', ['A', 'B']),
+  'B': component('B', ['A', 'C']),
+  'C': component('C', ['A']),
+  'D': component('D', ['C']),
 });
 
 system.start(function (err, ctx) {
@@ -48,7 +47,7 @@ system.stop(function (err, ctx) {
 
 function component(name, deps) {
     return {
-        depends: deps,
+        dependsOn: deps,
         start: start,
         stop: stop,
         toString: toString

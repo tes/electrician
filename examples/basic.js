@@ -1,12 +1,12 @@
 'use strict';
 
-var components = require('..');
+var electrician = require('..');
 
-var system = components.system({
+var system = electrician.system({
   'A': component('A'),
-  'B': component('B', ['A']),
-  'C': component('C', ['B']),
-  'D': component('D', ['A', 'B']),
+  'B': component('B', ['A', 'C']),
+  'C': component('C', ['A']),
+  'D': component('D', ['C']),
 });
 
 system.start(function (err, ctx) {
@@ -19,7 +19,7 @@ system.stop(function (err, ctx) {
 
 function component(name, deps) {
     return {
-        depends: deps,
+        dependsOn: deps,
         start: start,
         stop: stop,
         toString: toString
