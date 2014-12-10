@@ -6,7 +6,7 @@ var system = components.system({
   'A': component('A'),
   'B': component('B', ['A']),
   'C': component('C', ['B']),
-  'D': component('B', ['A', 'B']),
+  'D': component('D', ['A', 'B']),
 });
 
 system.start(function (err, ctx) {
@@ -21,6 +21,7 @@ function component(name, deps) {
     return {
         depends: deps,
         start: start,
+        stop: stop,
         toString: toString
     }
 
@@ -36,7 +37,7 @@ function component(name, deps) {
     }
 
     function stop(ctx, next) {
-        console.log('Stopping: ', toString);
+        console.log('Stopping: ', toString());
         next();
     }
 
