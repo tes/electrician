@@ -1,0 +1,18 @@
+{
+  "name": "components",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "toposort": "^0.2.10"
+  },
+  "devDependencies": {
+    "expect": "^1.1.0",
+    "mocha": "^2.0.1"
+  }
+}
