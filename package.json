@@ -4,7 +4,7 @@
   "description": "Wire components into systems",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -R spec test/*"
+    "test": "istanbul cover _mocha -- -R spec test/* && istanbul check-coverage --statements 80"
   },
   "dependencies": {
     "async": "^0.9.0",
@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
+    "istanbul": "^0.3.5",
     "mocha": "^2.0.1"
   }
 }
