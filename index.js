@@ -23,7 +23,10 @@ function system(components) {
             async.reduce(sequence, ctx, function (acc, key, next) {
                 if (!components[key].start) return next(null, acc);
                 components[key].start(acc, function (err, started) {
-                    if (err) return next(err);
+                    if (err) {
+                        err.message = key + ': ' + err.message;
+                        return next(err);
+                    }
                     next(null, _.assign(acc, toObject(key, started)));
                 });
             }, next);
@@ -36,9 +39,18 @@ function system(components) {
 
             async.eachSeries(sequence, function(key, next) {
                 if (!components[key].stop) return next();
-                components[key].stop(ctx, next);
+                components[key].stop(ctx, function (err) {
+                    if (err) {
+                        err.message = key + ': ' + err.message;
+                        return next(err);
+                    }
+                    next();
+                });
             }, function(err) {
-                if (err) return next(err);
+                if (err) {
+                    return next(err);
+                }
+
                 next(null, ctx);
             });
         });

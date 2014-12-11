@@ -16,6 +16,44 @@ describe('System', function () {
     var startCounter;
     var stopCounter;
 
+    function component(deps) {
+        var state = {
+            started: false,
+            stopped: false
+        };
+
+        return {
+            dependsOn: deps,
+            start: function (ctx, next) {
+                state.started = true;
+                state.startSequence = startCounter++;
+                next(null, state);
+            },
+            stop: function (ctx, next) {
+                state.stopped = true;
+                state.stopSequence = stopCounter++;
+                next(null, state);
+            },
+            state: state
+        };
+    }
+
+    function componentErrorStart(deps) {
+        var c = component(deps);
+        c.start = function (ctx, next) {
+            next(new Error('Test Error'));
+        };
+        return c;
+    }
+
+    function componentErrorStop(deps) {
+        var c = component(deps);
+        c.stop = function (ctx, next) {
+            next(new Error('Test Error'));
+        };
+        return c;
+    }
+
     beforeEach(function () {
         startCounter = 1;
         stopCounter = 1;
@@ -39,6 +77,7 @@ describe('System', function () {
         });
 
         system.start(function (err, ctx) {
+            if (err) return done(err);
             expect(ctx.comp.started).to.be(true);
             done();
         });
@@ -51,6 +90,7 @@ describe('System', function () {
         });
 
         system.start(function (err, ctx) {
+            if (err) return done(err);
             expect(ctx.one.started).to.be(true);
             expect(ctx.two.started).to.be(true);
             done();
@@ -65,6 +105,7 @@ describe('System', function () {
         });
 
         system.start(function (err, ctx) {
+            if (err) return done(err);
             expect(ctx.one.startSequence).to.be(2);
             expect(ctx.two.startSequence).to.be(1);
             //standalone - order consequential
@@ -82,8 +123,37 @@ describe('System', function () {
             system.start,
             system.stop
         ], function (err, result) {
+            if (err) return done(err);
             var ctx = result.pop();
             expect(ctx.comp.stopped).to.be(true);
+            done();
+        });
+    });
+
+    it('should return an error on stop if one is passed through on a single component', function (done) {
+        var system = components.system({
+            'comp': componentErrorStop()
+        });
+
+        async.series([
+            system.start,
+            system.stop
+        ], function (err, result) {
+            expect(err.message).to.be('comp: Test Error');
+            done();
+        });
+    });
+
+    it('should return an error on start if one is passed through on a single component', function (done) {
+        var system = components.system({
+            'comp': componentErrorStart()
+        });
+
+        async.series([
+            system.start,
+            system.stop
+        ], function (err, result) {
+            expect(err.message).to.be('comp: Test Error');
             done();
         });
     });
@@ -98,6 +168,7 @@ describe('System', function () {
             system.start,
             system.stop
         ], function (err, result) {
+            if (err) return done(err);
             var ctx = result.pop();
             expect(ctx.one.stopped).to.be(true);
             expect(ctx.two.stopped).to.be(true);
@@ -116,6 +187,7 @@ describe('System', function () {
             system.start,
             system.stop
         ], function (err, result) {
+            if (err) return done(err);
             var ctx = result.pop();
             expect(ctx.one.stopSequence).to.be(2);
             expect(ctx.two.stopSequence).to.be(3);
@@ -131,6 +203,7 @@ describe('System', function () {
         });
 
         system.start(function (err, ctx) {
+            if (err) return done(err);
             expect(ctx.comp).to.not.be.ok();
             done();
         });
@@ -145,6 +218,7 @@ describe('System', function () {
             system.start,
             system.stop
         ], function (err, result) {
+            if (err) return done(err);
             var ctx = result.pop();
             expect(ctx.comp.stopped).to.be(false);
             done();
@@ -181,28 +255,4 @@ describe('System', function () {
             });
         });
     });
-
-    function component(deps) {
-        var state = {
-            started: false,
-            stopped: false
-        };
-
-        return {
-            dependsOn: deps,
-            start: function (ctx, next) {
-                state.started = true;
-                state.startSequence = startCounter++;
-                next(null, state)
-            },
-            stop: function (ctx, next) {
-                state.stopped = true;
-                state.stopSequence = stopCounter++;
-                next(null, state);
-            },
-            state: state
-        };
-    }
 });
-
-
