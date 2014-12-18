@@ -8,8 +8,19 @@ module.exports = {
     system: system
 };
 
-function system(components) {
+function system(options, components) {
     var ctx = {};
+    var defaults = {
+        explicit: false
+    };
+
+    if (!components) {
+        components = options;
+        options = defaults;
+    } else {
+        options = _.extend({}, defaults, options);
+    }
+
     return {
         start: start,
         stop: stop
@@ -21,14 +32,9 @@ function system(components) {
             if (err) return next(err);
 
             async.reduce(sequence, ctx, function (acc, key, next) {
-                if (!components[key].start) return next(null, acc);
-                components[key].start(acc, function (err, started) {
-                    if (err) {
-                        err.message = key + ': ' + err.message;
-                        return next(err);
-                    }
-                    next(null, _.assign(acc, toObject(key, started)));
-                });
+                var component = components[key];
+                if (!component.start) return next(null, acc);
+                startComponent(options, ctx, component, key, next);
             }, next);
         });
     }
@@ -55,6 +61,24 @@ function system(components) {
             });
         });
     }
+}
+
+function startComponent(options, ctx, component, id, next) {
+    if (options.explicit) {
+        next(null, ctx);
+    } else {
+        startImplicitComponent(ctx, component, id, next);
+    }
+}
+
+function startImplicitComponent(ctx, component, id, next) {
+    component.start(ctx, function (err, started) {
+        if (err) {
+            err.message = id + ': ' + err.message;
+            return next(err);
+        }
+        next(null, _.assign(ctx, toObject(id, started)));
+    });
 }
 
 function startSequence(components, next) {

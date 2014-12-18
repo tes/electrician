@@ -4,11 +4,11 @@ var expect = require('expect.js');
 var async = require('async');
 var _ = require('lodash');
 
-var components = require('..');
+var electrician = require('..');
 
-describe('Components', function () {
+describe('Electrician', function () {
     it('should create an empty system', function () {
-        expect(components.system({})).to.be.an('object');
+        expect(electrician.system({})).to.be.an('object');
     });
 });
 
@@ -60,19 +60,19 @@ describe('System', function () {
     });
 
     it('should have start/stop methods', function () {
-        var system = components.system({});
+        var system = electrician.system({});
         expect(system.start).to.be.a(Function);
         expect(system.stop).to.be.a(Function);
     });
 
     it('should take callbacks for start/stop', function () {
-        var system = components.system({});
+        var system = electrician.system({});
         expect(system.start.length).to.be(1);
         expect(system.stop.length).to.be(1);
     });
 
     it('should start a single component', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'comp': component()
         });
 
@@ -84,7 +84,7 @@ describe('System', function () {
     });
 
     it('should start multiple components', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'one': component(),
             'two': component()
         });
@@ -98,7 +98,7 @@ describe('System', function () {
     });
 
     it('should start multiple components in dependency order', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'one': component('two'),
             'two': component(),
             'three': component()
@@ -115,7 +115,7 @@ describe('System', function () {
     });
 
     it('should stop a single component', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'comp': component()
         });
 
@@ -131,7 +131,7 @@ describe('System', function () {
     });
 
     it('should return an error on stop if one is passed through on a single component', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'comp': componentErrorStop()
         });
 
@@ -145,7 +145,7 @@ describe('System', function () {
     });
 
     it('should return an error on start if one is passed through on a single component', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'comp': componentErrorStart()
         });
 
@@ -159,7 +159,7 @@ describe('System', function () {
     });
 
     it('should stop multiple components', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'one': component(),
             'two': component()
         });
@@ -177,7 +177,7 @@ describe('System', function () {
     });
 
     it('should stop multiple components in dependency order', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'one': component('two'),
             'two': component(),
             'three': component()
@@ -198,7 +198,7 @@ describe('System', function () {
     });
 
     it('should not attempt to start components without start method', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'comp': _.omit(component(), 'start')
         });
 
@@ -210,7 +210,7 @@ describe('System', function () {
     });
 
     it('should not attempt to stop components without stop method', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'comp': _.omit(component(), 'stop')
         });
 
@@ -226,7 +226,7 @@ describe('System', function () {
     });
 
     it('should return error when wiring cyclical dependencies on start', function (done) {
-        var system = components.system({
+        var system = electrician.system({
             'A': component('B'),
             'B': component('A')
         });
@@ -240,7 +240,7 @@ describe('System', function () {
     it('should return error when wiring cyclical dependencies on stop', function (done) {
         var A = component();
         var B = component('A');
-        var system = components.system({
+        var system = electrician.system({
             'A': A,
             'B': B
         });
