@@ -21,6 +21,9 @@ function system(options, components) {
         options = _.extend({}, defaults, options);
     }
 
+    var startComponent = options.explicit ? startExplicitComponent : startImplicitComponent;
+    var stopComponent = options.explicit ? stopExplicitComponent : stopImplicitComponent;
+
     return {
         start: start,
         stop: stop
@@ -34,7 +37,7 @@ function system(options, components) {
             async.reduce(sequence, ctx, function (acc, key, next) {
                 var component = components[key];
                 if (!component.start) return next(null, acc);
-                startComponent(options, ctx, component, key, next);
+                startComponent(ctx, component, key, next);
             }, next);
         });
     }
@@ -44,14 +47,9 @@ function system(options, components) {
             if (err) return next(err);
 
             async.eachSeries(sequence, function(key, next) {
+                var component = components[key];
                 if (!components[key].stop) return next();
-                components[key].stop(ctx, function (err) {
-                    if (err) {
-                        err.message = key + ': ' + err.message;
-                        return next(err);
-                    }
-                    next();
-                });
+                stopComponent(ctx, component, key, next);
             }, function(err) {
                 if (err) {
                     return next(err);
@@ -63,12 +61,25 @@ function system(options, components) {
     }
 }
 
-function startComponent(options, ctx, component, id, next) {
-    if (options.explicit) {
-        startExplicitComponent(ctx, component, id, next);
-    } else {
-        startImplicitComponent(ctx, component, id, next);
-    }
+function stopImplicitComponent(ctx, component, id, next) {
+    component.stop(ctx, function (err) {
+        // DUPLICATION: SEE BELOW
+        if (err) {
+            err.message = id + ': ' + err.message;
+            return next(err);
+        }
+        next();
+    });
+}
+
+function stopExplicitComponent(ctx, component, id, next) {
+    component.stop(function (err) {
+        if (err) {
+            err.message = id + ': ' + err.message;
+            return next(err);
+        }
+        next();
+    });
 }
 
 function startExplicitComponent(ctx, component, id, next) {
