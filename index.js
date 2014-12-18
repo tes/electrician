@@ -33,7 +33,6 @@ function system(options, components) {
         ctx = {};
         startSequence(components, function (err, sequence) {
             if (err) return next(err);
-
             async.reduce(sequence, ctx, function (acc, key, next) {
                 var component = components[key];
                 if (!component.start) return next(null, acc);
@@ -45,70 +44,16 @@ function system(options, components) {
     function stop(next) {
         stopSequence(components, function (err, sequence) {
             if (err) return next(err);
-
             async.eachSeries(sequence, function(key, next) {
                 var component = components[key];
                 if (!components[key].stop) return next();
                 stopComponent(ctx, component, key, next);
             }, function(err) {
-                if (err) {
-                    return next(err);
-                }
-
+                if (err) return next(err);
                 next(null, ctx);
             });
         });
     }
-}
-
-function stopImplicitComponent(ctx, component, id, next) {
-    component.stop(ctx, function (err) {
-        // DUPLICATION: SEE BELOW
-        if (err) {
-            err.message = id + ': ' + err.message;
-            return next(err);
-        }
-        next();
-    });
-}
-
-function stopExplicitComponent(ctx, component, id, next) {
-    component.stop(function (err) {
-        if (err) {
-            err.message = id + ': ' + err.message;
-            return next(err);
-        }
-        next();
-    });
-}
-
-function startExplicitComponent(ctx, component, id, next) {
-    var dependencyIds = [].concat(component.dependsOn || []);
-    var dependencies = _.map(dependencyIds, function(id) {
-        return ctx[id];
-    });
-    var argc = component.start.length;
-    var args = dependencies.slice(0, argc -1);
-    args[argc - 1] = function (err, started) {
-        // DUPLICATION: SEE BELOW
-        if (err) {
-            err.message = id + ': ' + err.message;
-            return next(err);
-        }
-        next(null, _.assign(ctx, toObject(id, started)));
-    }
-
-    component.start.apply(component, args);
-}
-
-function startImplicitComponent(ctx, component, id, next) {
-    component.start(ctx, function (err, started) {
-        if (err) {
-            err.message = id + ': ' + err.message;
-            return next(err);
-        }
-        next(null, _.assign(ctx, toObject(id, started)));
-    });
 }
 
 function startSequence(components, next) {
@@ -148,6 +93,47 @@ function startSequenceSync(components) {
         .reverse()
         .concat(noDeps)
     );
+}
+
+function startExplicitComponent(ctx, component, id, next) {
+    var dependencyIds = [].concat(component.dependsOn || []);
+    var dependencies = _.map(dependencyIds, function(id) {
+        return ctx[id];
+    });
+    var argc = component.start.length;
+    var args = dependencies.slice(0, argc -1);
+    args[argc - 1] = function (err, started) {
+        if (err) return next(toComponentError(id, err));
+        next(null, _.assign(ctx, toObject(id, started)));
+    }
+
+    component.start.apply(component, args);
+}
+
+function startImplicitComponent(ctx, component, id, next) {
+    component.start(ctx, function (err, started) {
+        if (err) return next(toComponentError(id, err));
+        next(null, _.assign(ctx, toObject(id, started)));
+    });
+}
+
+function stopImplicitComponent(ctx, component, id, next) {
+    component.stop(ctx, function (err) {
+        if (err) return next(toComponentError(id, err));
+        next();
+    });
+}
+
+function stopExplicitComponent(ctx, component, id, next) {
+    component.stop(function (err) {
+        if (err) return next(toComponentError(id, err));
+        next();
+    });
+}
+
+function toComponentError(id, err) {
+    err.message = id + ': ' + err.message;
+    return err;
 }
 
 function toObject(key, value) {
