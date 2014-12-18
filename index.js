@@ -65,10 +65,29 @@ function system(options, components) {
 
 function startComponent(options, ctx, component, id, next) {
     if (options.explicit) {
-        next(null, ctx);
+        startExplicitComponent(ctx, component, id, next);
     } else {
         startImplicitComponent(ctx, component, id, next);
     }
+}
+
+function startExplicitComponent(ctx, component, id, next) {
+    var dependencyIds = [].concat(component.dependsOn || []);
+    var dependencies = _.map(dependencyIds, function(id) {
+        return ctx[id];
+    });
+    var argc = component.start.length;
+    var args = dependencies.slice(0, argc -1);
+    args[argc - 1] = function (err, started) {
+        // DUPLICATION: SEE BELOW
+        if (err) {
+            err.message = id + ': ' + err.message;
+            return next(err);
+        }
+        next(null, _.assign(ctx, toObject(id, started)));
+    }
+
+    component.start.apply(component, args);
 }
 
 function startImplicitComponent(ctx, component, id, next) {
