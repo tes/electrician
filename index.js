@@ -44,11 +44,11 @@ function system(options, components) {
     function stop(next) {
         stopSequence(components, function (err, sequence) {
             if (err) return next(err);
-            async.eachSeries(sequence, function(key, next) {
+            async.eachSeries(sequence, function (key, next) {
                 var component = components[key];
                 if (!components[key].stop) return next();
                 stopComponent(ctx, component, key, next);
-            }, function(err) {
+            }, function (err) {
                 if (err) return next(err);
                 next(null, ctx);
             });
@@ -97,7 +97,7 @@ function startSequenceSync(components) {
 
 function startExplicitComponent(ctx, component, id, next) {
     var dependencyIds = [].concat(component.dependsOn || []);
-    var dependencies = _.map(dependencyIds, function(id) {
+    var dependencies = _.map(dependencyIds, function (id) {
         return ctx[id];
     });
     var argc = component.start.length;

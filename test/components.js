@@ -10,10 +10,10 @@ function Component() {
 }
 
 _.extend(Component.prototype, {
-    start: function(next) {
+    start: function (next) {
         onStart(this.state, next);
     },
-    stop: function(next) {
+    stop: function (next) {
         onStop(this.state, next);
     }
 });
@@ -25,10 +25,10 @@ function DepComponent(dependency) {
 }
 
 _.extend(DepComponent.prototype, {
-    start: function(dependency, next) {
+    start: function (dependency, next) {
         onStart(this.state, next);
     },
-    stop: function(next) {
+    stop: function (next) {
         onStop(this.state, next);
     }
 });
