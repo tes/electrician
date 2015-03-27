@@ -1,6 +1,6 @@
 {
   "name": "electrician",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Wire components into systems",
   "main": "index.js",
   "scripts": {
