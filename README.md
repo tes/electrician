@@ -2,6 +2,8 @@ Electrician
 ===========
 > ... will sort out your wiring.
 
+![Electrician at work](http://www.cdelec.co.uk/media//commercial-electrician_1.jpg)
+
 Electrician is a module for wiring together systems composed of components. In
 order for a component to play well with electrician, it needs to support a
  simple interface. Component should define a way to be started (`start`
