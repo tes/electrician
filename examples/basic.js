@@ -2,46 +2,71 @@
 
 var electrician = require('..');
 
-var system = electrician.system({
-  'A': component('A'),
-  'B': component('B', ['A', 'C']),
-  'C': component('C', ['A']),
-  'D': component('D', ['C']),
-});
-
-system.start(function (err, ctx) {
-    console.log('Started: ', ctx);
-});
-system.stop(function (err, ctx) {
-    console.log('Stopped: ', ctx);
-});
-
-
-function component(name, deps) {
-    return {
-        dependsOn: deps,
-        start: start,
-        stop: stop,
-        toString: toString
-    }
-
-    function start(ctx, next) {
-        console.log('Starting: ', toString());
-        if (deps) {
-            console.log('Dependencies:');
-            deps.forEach(function (dependency) {
-                console.log('\t' + dependency + ': ' + ctx[dependency]);
-            });
-        }
-        next(null, toString());
-    }
-
-    function stop(ctx, next) {
-        console.log('Stopping: ', toString());
-        next();
-    }
-
-    function toString() {
-        return 'name:[' + name + '], dependencies:[' + deps + ']';
-    }
+// COMPONENTS IMPLEMENTATIONS
+function NoDepComponent(name) {
+    this.name = name;
+    return this;
 }
+NoDepComponent.prototype.start = function (next) {
+    console.log('Starting: ' + this);
+    next(null, this);
+}
+NoDepComponent.prototype.stop = stop;
+NoDepComponent.prototype.toString = toString;
+
+function OneDepComponent(name, dep) {
+    this.name = name;
+    this.dependsOn = [dep]
+    return this;
+}
+OneDepComponent.prototype.start = function (dep, next) {
+    console.log('Starting: ' + this);
+    console.log('\tDependency: ' + dep);
+    next(null, this);
+}
+OneDepComponent.prototype.stop = stop;
+OneDepComponent.prototype.toString = toString;
+
+function TwoDepComponent(name, firstDep, secondDep) {
+    this.name = name;
+    this.dependsOn = [firstDep, secondDep]
+    return this;
+}
+TwoDepComponent.prototype.start = function (firstDep, secondDep, next) {
+    console.log('Starting: ' + this);
+    console.log('\t1st dependency: ' + firstDep);
+    console.log('\t2nd dependency: ' + secondDep);
+    next(null, this);
+}
+TwoDepComponent.prototype.stop = stop;
+TwoDepComponent.prototype.toString = toString;
+
+function stop(next) {
+    console.log('Stopping: ' + this);
+    next();
+}
+
+function toString() {
+    return 'Component ' + this.name;
+}
+
+// COMPOSE SYSTEM
+var system = electrician.system({explicit: true}, {
+  'A': new NoDepComponent('A'),
+  'B': new TwoDepComponent('B', 'A', 'C'),
+  'C': new OneDepComponent('C', 'A'),
+  'D': new OneDepComponent('D', 'C'),
+});
+
+// START SYSTEM
+system.start(function (err) {
+    if (err) return console.error(err);
+    console.log('System started');
+});
+
+// STOP SYSTEM
+system.stop(function (err) {
+    if (err) return console.error(err);
+    console.log('System stopped');
+});
+
