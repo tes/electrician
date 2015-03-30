@@ -201,7 +201,7 @@ Electrician system interface
 System is a supercomponent composed of components wired together by
  electrician.
 
-### system([componentMap])
+### system(componentMap)
 
 Creates a system composed of components provided in `componentMap`. Map keys
  are considered component names (that can be used when declaring dependencies
