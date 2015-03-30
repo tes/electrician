@@ -6,15 +6,15 @@ Electrician
 
 Electrician is a module for wiring together systems composed of components. In
 order for a component to play well with electrician, it needs to support a
- simple interface. Component should define a way to be started (`start`
+ simple interface. Components supporting this interface are called _electric
+ components_. Electric component should define a way to be started (`start`
  function), a way to be stopped (`stop` function) and list its dependencies
  (`dependsOn` property). Electrician can then wire these components into a system
- (which is itself a component). Components supporting this interface are called
- _electric components_.
+ (which is itself an electric component).
 
-When system is started, electrician ensures that all the
-components are started in correct depedency order, and it passes all
- dependencies down to components start functions.
+When system is started, electrician ensures that all the components are started
+ in correct depedency order, and it passes all dependencies down to components
+ start functions.
 
 Conversely when system is stopped all the components are stopped in reverse
  order.
