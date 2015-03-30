@@ -4,6 +4,10 @@
   "description": "Wire components into systems",
   "license": "MIT",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tes/electrician.git"
+  },
   "scripts": {
     "test": "istanbul cover _mocha -- -R spec test/* && istanbul check-coverage --statements 80"
   },
