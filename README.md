@@ -2,6 +2,8 @@ Electrician
 ===========
 > ... will sort out your wiring.
 
+[![Build Status](https://travis-ci.org/tes/electrician.svg?branch=master)](https://travis-ci.org/tes/electrician)
+
 ![Electrician at work](http://www.cdelec.co.uk/media//commercial-electrician_1.jpg)
 
 Electrician is a module for wiring together systems composed of components. In
