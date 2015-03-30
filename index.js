@@ -8,21 +8,8 @@ module.exports = {
     system: system
 };
 
-function system(options, components) {
+function system(components) {
     var ctx = {};
-    var defaults = {
-        explicit: false
-    };
-
-    if (!components) {
-        components = options;
-        options = defaults;
-    } else {
-        options = _.extend({}, defaults, options);
-    }
-
-    var startComponent = options.explicit ? startExplicitComponent : startImplicitComponent;
-    var stopComponent = options.explicit ? stopExplicitComponent : stopImplicitComponent;
 
     return {
         start: start,
@@ -48,10 +35,7 @@ function system(options, components) {
                 var component = components[key];
                 if (!components[key].stop) return next();
                 stopComponent(ctx, component, key, next);
-            }, function (err) {
-                if (err) return next(err);
-                next(null, ctx);
-            });
+            }, next);
         });
     }
 }
@@ -95,7 +79,7 @@ function startSequenceSync(components) {
     );
 }
 
-function startExplicitComponent(ctx, component, id, next) {
+function startComponent(ctx, component, id, next) {
     var dependencyIds = [].concat(component.dependsOn || []);
     var dependencies = _.map(dependencyIds, function (id) {
         return ctx[id];
@@ -110,21 +94,7 @@ function startExplicitComponent(ctx, component, id, next) {
     component.start.apply(component, args);
 }
 
-function startImplicitComponent(ctx, component, id, next) {
-    component.start(ctx, function (err, started) {
-        if (err) return next(toComponentError(id, err));
-        next(null, _.assign(ctx, toObject(id, started)));
-    });
-}
-
-function stopImplicitComponent(ctx, component, id, next) {
-    component.stop(ctx, function (err) {
-        if (err) return next(toComponentError(id, err));
-        next();
-    });
-}
-
-function stopExplicitComponent(ctx, component, id, next) {
+function stopComponent(ctx, component, id, next) {
     component.stop(function (err) {
         if (err) return next(toComponentError(id, err));
         next();
