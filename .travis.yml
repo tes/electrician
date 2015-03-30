@@ -1,6 +1,14 @@
 language: node_js
 node_js:
-  - "0.10"
-  - "0.12"
-  - "1.0"
-  - "1.5"
+- '0.10'
+- '0.12'
+- '1.0'
+- '1.5'
+deploy:
+  provider: npm
+  email: clifton.cunningham@tes.co.uk
+  api_key:
+    secure: ZdVWEbIPRqsnJnX/m6uxrjnF656QzQwKIKNMzc16UYk8GcACWeyHwATMaYEPdk70VmjeIqMVDNLVmg8LCFZ3asetoG4kOtPhsENcfK3nBklz5PGofpUowttOtKOwEP8pUR/QTrKvE6E29Dx6LDgnnqHIaVbemYT7dRy6E/PK+mA=
+  on:
+    tags: true
+    repo: tes/electrician
