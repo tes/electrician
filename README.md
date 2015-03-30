@@ -163,14 +163,17 @@ Function used to start the component. Electrician will call this function after
 
 #### Arguments
  * `[dependencies]` _(...Object)_ Dependency components
- * `next` Callback to notify of successful start or failure
+ * `next` Callback to export started component or notify of failure
 
 #### Example
 ```js
 this.start = function (rabbit, redis, next) {
     app.subscribe(rabbit);
     app.cache(new RedisCache(redis));
-    app.start(next);
+    app.start(function (err) {
+        if (err) return next(err);
+        next(null, app);
+    });
 };
 ```
 
