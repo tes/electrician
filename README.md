@@ -209,7 +209,7 @@ Creates a system composed of components provided in `componentMap`. Map keys
 
 #### Example
 ```js
-var config = require('config');
+var config = require('./config');
 var Application = require('./app');
 var Redis = require('electric-redis');
 var RabbitMq = require('electric-rabbit');
