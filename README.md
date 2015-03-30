@@ -161,6 +161,9 @@ Function used to start the component. Electrician will call this function after
  dependencies that you wish to be started before the component, but you don't
  intend on using directly (e.g. environment setup).
 
+When component is sucessfully started, an instance of it should be given to
+ `next` callback so it can be passed to components depending on it.
+
 #### Arguments
  * `[dependencies]` _(...Object)_ Dependency components
  * `next` Callback to export started component or notify of failure
@@ -236,9 +239,9 @@ Starts the system (all the components it is composed of) and calls `next` when
 
 ##### Example
 ```js
-system.start(function (err) {
+system.start(function (err, sys) {
     if (err) return console.error('System did not start.', err);
-    console.log('System started.');
+    console.log('System started.', sys);
 });
 ```
 
