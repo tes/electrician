@@ -2,6 +2,7 @@
   "name": "electrician",
   "version": "0.1.0",
   "description": "Wire components into systems",
+  "license": "MIT",
   "main": "index.js",
   "scripts": {
     "test": "istanbul cover _mocha -- -R spec test/* && istanbul check-coverage --statements 80"
