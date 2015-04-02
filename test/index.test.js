@@ -233,4 +233,16 @@ describe('System', function () {
             });
         });
     });
+
+    it('reports missing dependencies', function (done) {
+        var comp = new DepComponent('missing');
+        var system = electrician.system({
+            'comp': comp
+        });
+
+        system.start(function (err) {
+            expect(err.message).to.be('Unknown component: missing');
+            done();
+        });
+    });
 });

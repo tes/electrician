@@ -22,6 +22,9 @@ function system(components) {
             if (err) return next(err);
             async.reduce(sequence, ctx, function (acc, key, next) {
                 var component = components[key];
+                if (!exists(component)) {
+                    return next(new Error('Unknown component: ' + key));
+                }
                 if (!component.start) return next(null, acc);
                 startComponent(ctx, component, key, next);
             }, next);
@@ -110,4 +113,8 @@ function toObject(key, value) {
     var obj = {};
     obj[key] = value;
     return  obj;
+}
+
+function exists(obj) {
+    return obj !== null && obj !== undefined;
 }
