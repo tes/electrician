@@ -247,7 +247,7 @@ system.start(function (err, sys) {
 });
 ```
 
-#### start(next)
+#### stop(next)
 
 Stops the system (all the components it is composed of) and calls `next` when
  done or on failure.
