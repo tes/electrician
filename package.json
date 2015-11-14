@@ -9,16 +9,25 @@
     "url": "https://github.com/tes/electrician.git"
   },
   "scripts": {
-    "test": "istanbul cover _mocha -- -R spec test/* && istanbul check-coverage --statements 80"
+    "lint": "eslint .",
+    "test": "f(){ if [ \"$#\" -gt 0 ]; then mocha \"$@\"; else npm run coverage; fi; };f",
+    "coverage": "istanbul cover --include-all-sources true -x examples/** _mocha && istanbul check-coverage --statements 100"
   },
+  "pre-commit": [
+    "lint",
+    "test"
+  ],
   "dependencies": {
     "async": "^0.9.0",
     "lodash": "^2.4.1",
     "toposort-class": "^0.3.1"
   },
   "devDependencies": {
+    "eslint": "^1.6.0",
+    "eslint-config-airbnb": "^0.1.0",
     "expect.js": "^0.3.1",
     "istanbul": "^0.3.5",
-    "mocha": "^2.0.1"
+    "mocha": "^2.0.1",
+    "pre-commit": "^1.1.1"
   }
 }
