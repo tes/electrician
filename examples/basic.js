@@ -1,8 +1,16 @@
-'use strict';
-
+/* eslint no-console: 0 */
 var electrician = require('..');
 
 // COMPONENTS IMPLEMENTATIONS
+function stop(next) {
+  console.log('Stopping: ' + this);
+  next();
+}
+
+function toString() {
+  return 'Component ' + this.name;
+}
+
 function NoDepComponent(name) {
   this.name = name;
   return this;
@@ -40,15 +48,6 @@ TwoDepComponent.prototype.start = function(firstDep, secondDep, next) {
 };
 TwoDepComponent.prototype.stop = stop;
 TwoDepComponent.prototype.toString = toString;
-
-function stop(next) {
-  console.log('Stopping: ' + this);
-  next();
-}
-
-function toString() {
-  return 'Component ' + this.name;
-}
 
 // COMPOSE SYSTEM
 var system = electrician.system({explicit: true}, {
