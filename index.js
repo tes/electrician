@@ -3,24 +3,20 @@ var _ = require('lodash');
 var Toposort = require('toposort-class');
 
 function startSequenceSync(components) {
-  var nameDeps = _.map(_.pairs(components), function(pair) {
+  var nameDeps = _(components).pairs().map(function(pair) {
     return [_.head(pair), _.last(pair).dependsOn];
   });
-  var withDeps = _.filter(nameDeps, _.last);
-  var noDeps = _.map(_.difference(nameDeps, withDeps), _.head);
+  var withDeps = nameDeps.filter(_.last);
+  var noDeps = nameDeps.difference(withDeps).map(_.head).value();
 
   return _.uniq(
-        _.reduce(
-            withDeps,
-            function(acc, pair) {
-              return acc.add(_.head(pair), _.last(pair));
-            },
-            new Toposort()
-        )
-        .sort()
-        .reverse()
-        .concat(noDeps)
-    );
+    withDeps
+    .reduce(function(acc, pair) {
+      return acc.add(_.head(pair), _.last(pair));
+    }, new Toposort())
+    .sort()
+    .reverse()
+    .concat(noDeps));
 }
 
 function startSequence(components, next) {
