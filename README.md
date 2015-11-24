@@ -3,6 +3,8 @@ Electrician
 > ... will sort out your wiring.
 
 [![Build Status](https://travis-ci.org/tes/electrician.svg?branch=master)](https://travis-ci.org/tes/electrician)
+[![Dependencies Status](https://david-dm.org/tes/electrician.svg)](https://david-dm.org/tes/electrician)
+[![Dev Dependencies Status](https://david-dm.org/tes/electrician/dev-status.svg)](https://david-dm.org/tes/electrician#info=devDependencies)
 
 ![Electrician at work](http://www.cdelec.co.uk/media//commercial-electrician_1.jpg)
 
