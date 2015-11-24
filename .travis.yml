@@ -2,8 +2,10 @@ language: node_js
 node_js:
 - '0.10'
 - '0.12'
-- '1.0'
-- '1.5'
+- '4.2'
+- '5.1'
+- 'node'
+- 'iojs'
 deploy:
   provider: npm
   email: clifton.cunningham@tes.co.uk
