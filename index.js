@@ -79,10 +79,10 @@ function exists(obj) {
 function system(components) {
   var ctx = {};
 
-  function start(cb) {
+  function start(next) {
     ctx = {};
     startSequence(components, function(err, sequence) {
-      if (err) return cb(err);
+      if (err) return next(err);
       async.reduce(sequence, ctx, function(acc, key, next) {
         var component = components[key];
         if (!exists(component)) {
@@ -90,18 +90,18 @@ function system(components) {
         }
         if (!component.start) return next(null, acc);
         startComponent(ctx, component, key, next);
-      }, cb);
+      }, next);
     });
   }
 
-  function stop(cb) {
+  function stop(next) {
     stopSequence(components, function(err, sequence) {
-      if (err) return cb(err);
+      if (err) return next(err);
       async.eachSeries(sequence, function(key, next) {
         var component = components[key];
         if (!components[key].stop) return next();
         stopComponent(ctx, component, key, next);
-      }, cb);
+      }, next);
     });
   }
 
