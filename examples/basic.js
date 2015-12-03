@@ -68,4 +68,3 @@ system.stop(function(err) {
   if (err) return console.error(err);
   console.log('System stopped');
 });
-
