@@ -32,13 +32,13 @@ describe('System', function () {
   it('starts a single component', function (done) {
     var comp = new Component();
     var system = electrician.system({
-      'comp': comp,
+      comp: comp
     });
 
     system.start(function (err) {
       if (err) return done(err);
       expect(comp.state.started).to.be(true);
-      done();
+      return done();
     });
   });
 
@@ -46,15 +46,15 @@ describe('System', function () {
     var one = new Component();
     var two = new Component();
     var system = electrician.system({
-      'one': one,
-      'two': two,
+      one: one,
+      two: two
     });
 
     system.start(function (err) {
       if (err) return done(err);
       expect(one.state.started).to.be(true);
       expect(two.state.started).to.be(true);
-      done();
+      return done();
     });
   });
 
@@ -63,9 +63,9 @@ describe('System', function () {
     var two = new Component();
     var three = new Component();
     var system = electrician.system({
-      'one': one,
-      'two': two,
-      'three': three,
+      one: one,
+      two: two,
+      three: three
     });
 
     system.start(function (err) {
@@ -74,23 +74,23 @@ describe('System', function () {
       expect(two.state.startSequence).to.be(1);
       // standalone - order consequential
       expect(three.state.startSequence).to.be(3);
-      done();
+      return done();
     });
   });
 
   it('stops a single component', function (done) {
     var comp = new Component();
     var system = electrician.system({
-      'comp': comp,
+      comp: comp
     });
 
     async.series([
       system.start,
-      system.stop,
+      system.stop
     ], function (err) {
       if (err) return done(err);
       expect(comp.state.stopped).to.be(true);
-      done();
+      return done();
     });
   });
 
@@ -98,13 +98,15 @@ describe('System', function () {
     var comp = _.extend(new Component(), {
       stop: function (next) {
         next(new Error('Test Error'));
-      },
+      }
     });
-    var system = electrician.system({ 'comp': comp });
+    var system = electrician.system({
+      comp: comp
+    });
 
     async.series([
       system.start,
-      system.stop,
+      system.stop
     ], function (err) {
       expect(err.message).to.be('comp: Test Error');
       done();
@@ -115,15 +117,15 @@ describe('System', function () {
     var comp = _.extend(new Component(), {
       start: function (next) {
         next(new Error('Test Error'));
-      },
+      }
     });
     var system = electrician.system({
-      'comp': comp,
+      comp: comp
     });
 
     system.start(function (err) {
       expect(err.message).to.be('comp: Test Error');
-      done();
+      return done();
     });
   });
 
@@ -131,18 +133,18 @@ describe('System', function () {
     var one = new Component();
     var two = new Component();
     var system = electrician.system({
-      'one': one,
-      'two': two,
+      one: one,
+      two: two
     });
 
     async.series([
       system.start,
-      system.stop,
+      system.stop
     ], function (err) {
       if (err) return done(err);
       expect(one.state.stopped).to.be(true);
       expect(two.state.stopped).to.be(true);
-      done();
+      return done();
     });
   });
 
@@ -151,56 +153,56 @@ describe('System', function () {
     var two = new Component();
     var three = new Component();
     var system = electrician.system({
-      'one': one,
-      'two': two,
-      'three': three,
+      one: one,
+      two: two,
+      three: three
     });
 
     async.series([
       system.start,
-      system.stop,
+      system.stop
     ], function (err) {
       if (err) return done(err);
       expect(one.state.stopSequence).to.be(2);
       expect(two.state.stopSequence).to.be(3);
       // standalone - order consequential
       expect(three.state.stopSequence).to.be(1);
-      done();
+      return done();
     });
   });
 
   it('does not attempt to start components without start method', function (done) {
     var system = electrician.system({
-      'comp': {},
+      comp: {}
     });
 
     system.start(function (err, ctx) {
       if (err) return done(err);
       expect(ctx.comp).to.not.be.ok();
-      done();
+      return done();
     });
   });
 
   it('does not attempt to stop components without stop method', function (done) {
     var comp = _.omit(new Component(), 'stop');
     var system = electrician.system({
-      'comp': comp,
+      comp: comp
     });
 
     async.series([
       system.start,
-      system.stop,
+      system.stop
     ], function (err) {
       if (err) return done(err);
       expect(comp.state.stopped).to.be(false);
-      done();
+      return done();
     });
   });
 
   it('returns error when wiring cyclical dependencies on start', function (done) {
     var system = electrician.system({
-      'A': new DepComponent('B'),
-      'B': new DepComponent('A'),
+      A: new DepComponent('B'),
+      B: new DepComponent('A')
     });
 
     system.start(function (err) {
@@ -213,15 +215,15 @@ describe('System', function () {
     var A = new Component();
     var B = new DepComponent('A');
     var system = electrician.system({
-      'A': A,
-      'B': B,
+      A: A,
+      B: B
     });
 
     system.start(function (err) {
       if (err) return done(err);
 
       A.dependsOn = 'B';
-      system.stop(function (error) {
+      return system.stop(function (error) {
         expect(error.message).to.match(/^Cyclic dependency found/);
         done();
       });
@@ -231,7 +233,7 @@ describe('System', function () {
   it('reports missing dependencies', function (done) {
     var comp = new DepComponent('missing');
     var system = electrician.system({
-      'comp': comp,
+      comp: comp
     });
 
     system.start(function (err) {

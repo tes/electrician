@@ -51,20 +51,20 @@ TwoDepComponent.prototype.toString = toString;
 
 // COMPOSE SYSTEM
 var system = electrician.system({ explicit: true }, {
-  'A': new NoDepComponent('A'),
-  'B': new TwoDepComponent('B', 'A', 'C'),
-  'C': new OneDepComponent('C', 'A'),
-  'D': new OneDepComponent('D', 'C'),
+  A: new NoDepComponent('A'),
+  B: new TwoDepComponent('B', 'A', 'C'),
+  C: new OneDepComponent('C', 'A'),
+  D: new OneDepComponent('D', 'C')
 });
 
 // START SYSTEM
 system.start(function (err) {
   if (err) return console.error(err);
-  console.log('System started');
+  return console.log('System started');
 });
 
 // STOP SYSTEM
 system.stop(function (err) {
   if (err) return console.error(err);
-  console.log('System stopped');
+  return console.log('System stopped');
 });

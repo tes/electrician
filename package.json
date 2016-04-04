@@ -19,12 +19,12 @@
   ],
   "dependencies": {
     "async": "^1.5.0",
-    "lodash": "^3.10.1",
+    "lodash": "^4.7.0",
     "toposort-class": "^1.0.1"
   },
   "devDependencies": {
-    "eslint": "^1.10.3",
-    "eslint-config-airbnb": "^2.0.0",
+    "eslint": "^2.6.0",
+    "eslint-config-airbnb": "^6.2.0",
     "expect.js": "^0.3.1",
     "istanbul": "^0.4.1",
     "mocha": "^2.3.4",
