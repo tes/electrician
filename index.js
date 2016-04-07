@@ -1,104 +1,112 @@
-var async = require('async');
+// TODO(geophree): shutdown everything on error in the right order
+// Build up list as we start, then play it back?  Need to make sure we reject with the first error.  Should keep track if we errored, and not start anything else.
+// TODO(geophree): expose components on system
 var _ = require('lodash');
-var Toposort = require('toposort-class');
+var Promise = require('core-js/library/es6/promise');
 
-function startSequenceSync(components) {
-  var nameDeps = _(components).pairs().map(function (pair) {
-    return [_.head(pair), _.last(pair).dependsOn];
+var alreadyStopped = Promise.reject(new Error('stop called before start'));
+var alreadyStarted = Promise.reject(new Error('start called before stop'));
+
+function prepareComponent(action, component) {
+  var exec;
+  var promise = new Promise(function (resolve, reject) {
+    exec = function (ctx) {
+      var func = component[action] || function () {};
+      Promise.resolve().then(function () {
+        return func.call(component, ctx);
+      }).then(resolve, reject);
+      return promise;
+    };
   });
-  var withDeps = nameDeps.filter(_.last);
-  var noDeps = nameDeps.difference(withDeps).map(_.head).value();
 
-  return _.uniq(
-    withDeps
-    .reduce(function (acc, pair) {
-      return acc.add(_.head(pair), _.last(pair));
-    }, new Toposort())
-    .sort()
-    .reverse()
-    .concat(noDeps));
-}
-
-function startSequence(components, next) {
-  try {
-    next(null, startSequenceSync(components));
-  } catch (err) {
-    next(err);
-  }
-}
-
-function stopSequence(components, next) {
-  try {
-    next(null, startSequenceSync(components).reverse());
-  } catch (err) {
-    next(err);
-  }
-}
-
-function toComponentError(id, err) {
-  err.message = id + ': ' + err.message;
-  return err;
-}
-
-function toObject(key, value) {
-  var obj = {};
-  obj[key] = value;
-  return obj;
-}
-
-function startComponent(ctx, component, id, next) {
-  var depIds = [].concat(component.dependsOn || []);
-  var dependencies = _.map(depIds, function (depId) {
-    return ctx[depId];
-  });
-  var argc = component.start.length;
-  var args = dependencies.slice(0, argc - 1);
-  args[argc - 1] = function (err, started) {
-    if (err) return next(toComponentError(id, err));
-    next(null, _.assign(ctx, toObject(id, started)));
+  return {
+    promise: promise,
+    exec: exec,
   };
-
-  component.start.apply(component, args);
-}
-
-function stopComponent(ctx, component, id, next) {
-  component.stop(function (err) {
-    if (err) return next(toComponentError(id, err));
-    next();
-  });
-}
-
-function exists(obj) {
-  return obj !== null && obj !== undefined;
 }
 
 function system(components) {
-  var ctx = {};
+  var deps;
+  var promises;
+  var startingPromise = alreadyStopped;
+  var stoppingPromise = Promise.resolve();
 
-  function start(next) {
-    ctx = {};
-    startSequence(components, function (err, sequence) {
-      if (err) return next(err);
-      async.reduce(sequence, ctx, function (acc, key, next) {
-        var component = components[key];
-        if (!exists(component)) {
-          return next(new Error('Unknown component: ' + key));
-        }
-        if (!component.start) return next(null, acc);
-        startComponent(ctx, component, key, next);
-      }, next);
+  function makeDepsPromise(action, actionDeps) {
+    return Promise.all(_.map(actionDeps, function (dep) {
+      var depPromise = promises[action][dep];
+      if (!depPromise) return Promise.reject(new Error('Unknown component: ' + dep));
+      return depPromise;
+    }));
+  }
+
+  function runExecAfterDeps(action, name, exec) {
+    var actionDeps = deps[action][name];
+    var startDeps = deps.start[name];
+
+    if (!actionDeps.length) return exec({});
+
+    return makeDepsPromise(action, actionDeps).then(function (doneDeps) {
+      if (action === 'start') return doneDeps;
+      return makeDepsPromise('start', startDeps);
+    }).then(function (doneDeps) {
+      return exec(_.zipObject(startDeps, doneDeps));
     });
   }
 
-  function stop(next) {
-    stopSequence(components, function (err, sequence) {
-      if (err) return next(err);
-      async.eachSeries(sequence, function (key, next) {
-        var component = components[key];
-        if (!components[key].stop) return next();
-        stopComponent(ctx, component, key, next);
-      }, next);
+  function runAction(action, each) {
+    var execs = {};
+    _.forOwn(components, function (component, name) {
+      deps.start[name] = component.dependencies || [];
+      deps.stop[name] = deps.stop[name] || [];
+      var prep = prepareComponent(action, component);
+      promises[action][name] = prep.promise;
+      if (each) each(component, name);
+      execs[name] = prep.exec;
     });
+
+    var allExecs = [];
+    _.forOwn(execs, function (exec, name) {
+      allExecs.push(runExecAfterDeps(action, name, exec));
+    });
+
+    var allDeps = _.keys(components);
+    return Promise.all(allExecs).then(function () {
+      return makeDepsPromise(action, allDeps);
+    }).then(function (doneDeps) {
+      return _.zipObject(allDeps, doneDeps);
+    });
+  }
+
+  function start() {
+    var promise = stoppingPromise.then(function () {
+      deps = { start: {}, stop: {} };
+      promises = { start: {}, stop: {} };
+      startingPromise = runAction('start');
+      return startingPromise;
+    });
+    stoppingPromise = alreadyStarted;
+    return promise;
+  }
+
+  function prepareStopEach(component, name) {
+    _.forEach(component.dependencies || [], function (dep) {
+      var stopDeps = deps.stop[dep] || [];
+      if (!stopDeps.length) deps.stop[dep] = stopDeps;
+      stopDeps.push(name);
+    });
+  }
+
+  function stop() {
+    var promise = startingPromise.then(function () {
+      stoppingPromise = runAction('stop', prepareStopEach).then(function () {
+        deps = undefined;
+        promises = undefined;
+        return {};
+      });
+      return stoppingPromise;
+    });
+    startingPromise = alreadyStopped;
+    return promise;
   }
 
   return {

@@ -12,16 +12,16 @@ function initialState() {
   };
 }
 
-function onStart(state, next) {
+function onStart(state) {
   state.started = true;
   state.startSequence = startCounter++;
-  next(null, state);
+  return state;
 }
 
-function onStop(state, next) {
+function onStop(state) {
   state.stopped = true;
   state.stopSequence = stopCounter++;
-  next(null, state);
+  return state;
 }
 
 function resetCounters() {
@@ -34,25 +34,25 @@ function Component() {
 }
 
 _.extend(Component.prototype, {
-  start: function (next) {
-    onStart(this.state, next);
+  start: function () {
+    return onStart(this.state);
   },
-  stop: function (next) {
-    onStop(this.state, next);
+  stop: function () {
+    return onStop(this.state);
   },
 });
 
 function DepComponent(dependency) {
   this.state = initialState();
-  this.dependsOn = dependency;
+  this.dependencies = [dependency];
 }
 
 _.extend(DepComponent.prototype, {
-  start: function (dependency, next) {
-    onStart(this.state, next);
+  start: function () {
+    return onStart(this.state);
   },
-  stop: function (next) {
-    onStop(this.state, next);
+  stop: function () {
+    return onStop(this.state);
   },
 });
 
