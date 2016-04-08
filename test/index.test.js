@@ -23,9 +23,9 @@ describe('System', function () {
     expect(system.stop).to.be.a(Function);
   });
 
-  it('takes no args for start/stop', function () {
+  it('takes one arg for start, none for stop', function () {
     var system = electrician.system({});
-    expect(system.start.length).to.be(0);
+    expect(system.start.length).to.be(1);
     expect(system.stop.length).to.be(0);
   });
 
@@ -49,6 +49,21 @@ describe('System', function () {
     return system.start().then(function () {
       expect(one.state.started).to.be(true);
       expect(two.state.started).to.be(true);
+    });
+  });
+
+  it('overrides components with context passed to start', function () {
+    var one = new Component();
+    var two = new Component();
+    var system = electrician.system({
+      'one': one,
+      'two': two,
+    });
+
+    return system.start({ 'two': true }).then(function (context) {
+      expect(one.state.started).to.be(true);
+      expect(two.state.started).to.be(false);
+      expect(context.two).to.be(true);
     });
   });
 
@@ -173,6 +188,21 @@ describe('System', function () {
     });
   });
 
+  it('starts when cyclical dependency is broken by context passed to start', function () {
+    var A = new DepComponent('B');
+    var B = new DepComponent('A');
+    var system = electrician.system({
+      'A': A,
+      'B': B,
+    });
+
+    return system.start({ 'B': true }).then(function (context) {
+      expect(A.state.started).to.be(true);
+      expect(B.state.started).to.be(false);
+      expect(context.B).to.be(true);
+    });
+  });
+
   it('returns error when wiring (mulitple) more complex cyclical dependencies on start', function () {
     var system = electrician.system({
       'A': new DepComponent('B'),
@@ -221,6 +251,49 @@ describe('System', function () {
       return Promise.reject(new Error('should have errored'));
     }, function (err) {
       expect(err.message).to.be('Unknown component: missing');
+    });
+  });
+
+  it('starts multiple components and nested systems', function () {
+    var one = new Component();
+    var two = new Component();
+    var nested = electrician.system({
+      'one': one,
+    });
+
+    var system = electrician.system({
+      'two': two,
+      'nested': nested,
+    });
+
+    return system.start().then(function () {
+      expect(one.state.started).to.be(true);
+      expect(two.state.started).to.be(true);
+    });
+  });
+
+  it('starts multiple components and nested systems with dependencies', function () {
+    var one = new Component();
+    var two = new Component();
+    var nested = electrician.system({
+      'one': one,
+    });
+
+    nested.dependencies = ['two'];
+    nested.oldStart = nested.start;
+    nested.start = function (context) {
+      nested.context = context;
+      nested.oldStart(context);
+    };
+
+    var system = electrician.system({
+      'two': two,
+      'nested': nested,
+    });
+
+    return system.start().then(function (context) {
+      expect(one.state.startSequence).to.be.above(two.state.startSequence);
+      expect(nested.context).to.eql({ 'two': context.two });
     });
   });
 });

@@ -30,6 +30,7 @@ function prepareComponent(action, component) {
 function system(components) {
   var deps;
   var promises;
+  var context;
   var startingPromise = alreadyStopped;
   var stoppingPromise = Promise.resolve();
 
@@ -57,7 +58,15 @@ function system(components) {
 
   function runAction(action, each) {
     var execs = {};
+    _.forOwn(context, function (contextObj, name) {
+      deps.start[name] = [];
+      deps.stop[name] = [];
+      promises[action][name] = Promise.resolve(contextObj);
+      execs[name] = function () { };
+    });
+
     _.forOwn(components, function (component, name) {
+      if (context[name]) return;
       deps.start[name] = component.dependencies || [];
       deps.stop[name] = deps.stop[name] || [];
       var prep = prepareComponent(action, component);
@@ -86,10 +95,11 @@ function system(components) {
     });
   }
 
-  function start() {
+  function start(startContext) {
     var promise = stoppingPromise.then(function () {
       deps = { start: {}, stop: {} };
       promises = { start: {}, stop: {} };
+      context = startContext || {};
       startingPromise = runAction('start');
       return startingPromise;
     });
@@ -108,6 +118,7 @@ function system(components) {
       stoppingPromise = runAction('stop', prepareStopEach).then(function () {
         deps = undefined;
         promises = undefined;
+        context = undefined;
         return {};
       });
       return stoppingPromise;
