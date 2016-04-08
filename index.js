@@ -68,7 +68,7 @@ function system(components) {
 
     var cycles = findDepCycles(deps.start);
     if (cycles.length) {
-      var error = new Error('Cyclical dependencies found: ' + _.map(cycles, function (cycle) { return JSON.stringify(cycle); }).join(', '));
+      var error = new Error('Cyclical dependencies found: ' + _.map(cycles, JSON.stringify).join(', '));
       error.cycles = cycles;
       return Promise.reject(error);
     }
@@ -99,9 +99,7 @@ function system(components) {
 
   function prepareStopEach(component, name) {
     _.forEach(component.dependencies || [], function (dep) {
-      var stopDeps = deps.stop[dep] || [];
-      if (!stopDeps.length) deps.stop[dep] = stopDeps;
-      stopDeps.push(name);
+      deps.stop[dep].push(name);
     });
   }
 
