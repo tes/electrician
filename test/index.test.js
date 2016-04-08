@@ -167,16 +167,39 @@ describe('System', function () {
     return system.start().then(function () {
       return Promise.reject(new Error('should have errored'));
     }, function (err) {
-      expect(err.message).to.match(/^Cyclic dependency found/);
+      expect(err).to.be.an(Error);
+      expect(err.message).to.match(/^Cyclical dependencies found/);
+      expect(_.sortBy(_.map(err.cycles, _.sortBy))).to.eql([['A', 'B']]);
+    });
+  });
+
+  it('returns error when wiring (mulitple) more complex cyclical dependencies on start', function () {
+    var system = electrician.system({
+      'A': new DepComponent('B'),
+      'B': new DepComponent('C', 'D'),
+      'C': new DepComponent('A'),
+      'D': new DepComponent('A'),
+      'E': new DepComponent('A'),
+      'F': new DepComponent('D'),
+      'G': new DepComponent('F'),
+      'H': new DepComponent('G', 'I'),
+      'I': new DepComponent('H', 'B'),
+    });
+
+    return system.start().then(function () {
+      return Promise.reject(new Error('should have errored'));
+    }, function (err) {
+      expect(err).to.be.an(Error);
+      expect(err.message).to.match(/^Cyclical dependencies found/);
+      expect(_.sortBy(_.map(err.cycles, _.sortBy))).to.eql([['A', 'B', 'C', 'D'], ['H', 'I']]);
     });
   });
 
   it('returns error when wiring cyclical dependencies on stop', function () {
     var A = new Component();
-    var B = new DepComponent('A');
     var system = electrician.system({
       'A': A,
-      'B': B,
+      'B': new DepComponent('A'),
     });
 
     return system.start().then(function () {
@@ -184,7 +207,9 @@ describe('System', function () {
     }).then(system.stop).then(function () {
       return Promise.reject(new Error('should have errored'));
     }, function (err) {
-      expect(err.message).to.match(/^Cyclic dependency found/);
+      expect(err).to.be.an(Error);
+      expect(err.message).to.match(/^Cyclical dependencies found/);
+      expect(_.sortBy(_.map(err.cycles, _.sortBy))).to.eql([['A', 'B']]);
     });
   });
 

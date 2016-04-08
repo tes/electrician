@@ -4,6 +4,8 @@
 var _ = require('lodash');
 var Promise = require('core-js/library/es6/promise');
 
+var findDepCycles = require('./lib/findDepCycles');
+
 var alreadyStopped = Promise.reject(new Error('stop called before start'));
 var alreadyStarted = Promise.reject(new Error('start called before stop'));
 
@@ -63,6 +65,13 @@ function system(components) {
       if (each) each(component, name);
       execs[name] = prep.exec;
     });
+
+    var cycles = findDepCycles(deps.start);
+    if (cycles.length) {
+      var error = new Error('Cyclical dependencies found: ' + _.map(cycles, function (cycle) { return JSON.stringify(cycle); }).join(', '));
+      error.cycles = cycles;
+      return Promise.reject(error);
+    }
 
     var allExecs = [];
     _.forOwn(execs, function (exec, name) {

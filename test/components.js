@@ -42,9 +42,9 @@ _.extend(Component.prototype, {
   },
 });
 
-function DepComponent(dependency) {
+function DepComponent() {
   this.state = initialState();
-  this.dependencies = [dependency];
+  this.dependencies = Array.prototype.slice.call(arguments);
 }
 
 _.extend(DepComponent.prototype, {
