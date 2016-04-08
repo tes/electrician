@@ -9,6 +9,33 @@ var findDepCycles = require('./lib/findDepCycles');
 var alreadyStopped = Promise.reject(new Error('stop called before start'));
 var alreadyStarted = Promise.reject(new Error('start called before stop'));
 
+var is = {
+  func: function (f) { return typeof f === 'function'; },
+  iterator: function (it) { return it && is.func(it.next); },
+};
+
+function normalizeComponent(component) {
+  if (!is.func(component)) return component;
+
+  var iterator;
+  return {
+    start: function (context) {
+      iterator = component(context);
+      if (!is.iterator(iterator)) {
+        return Promise.resolve(iterator);
+      }
+      return Promise.resolve(iterator.next().value);
+    },
+    stop: function () {
+      if (!is.iterator(iterator)) {
+        return Promise.resolve();
+      }
+      return Promise.resolve(iterator.next().value);
+    },
+    dependencies: component.dependencies,
+  };
+}
+
 function prepareComponent(action, component) {
   var exec;
   var promise = new Promise(function (resolve, reject) {
@@ -27,12 +54,13 @@ function prepareComponent(action, component) {
   };
 }
 
-function system(components) {
+function system(rawComponents) {
   var deps;
   var promises;
   var context;
   var startingPromise = alreadyStopped;
   var stoppingPromise = Promise.resolve();
+  var components = _.mapValues(rawComponents, normalizeComponent);
 
   function makeDepsPromise(action, actionDeps) {
     return Promise.all(_.map(actionDeps, function (dep) {
