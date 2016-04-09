@@ -1,6 +1,6 @@
 {
   "name": "electrician",
-  "version": "1.0.5",
+  "version": "2.0.0",
   "description": "Wire components into systems",
   "license": "MIT",
   "main": "index.js",
