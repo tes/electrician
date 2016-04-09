@@ -19,7 +19,7 @@
   ],
   "dependencies": {
     "core-js": "^1.2.6",
-    "lodash": "^3.10.1"
+    "lodash": "^4.7.0"
   },
   "devDependencies": {
     "eslint": "^1.10.3",
