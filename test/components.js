@@ -8,20 +8,20 @@ function initialState() {
     started: false,
     stopped: false,
     startSequence: 0,
-    stopSequence: 0
+    stopSequence: 0,
   };
 }
 
-function onStart(next) {
-  this.state.started = true;
-  this.state.startSequence = startCounter++;
-  next(null, this.state);
+function onStart(state, next) {
+  state.started = true;
+  state.startSequence = startCounter++;
+  next(null, state);
 }
 
-function onStop(next) {
-  this.state.stopped = true;
-  this.state.stopSequence = stopCounter++;
-  next(null, this.state);
+function onStop(state, next) {
+  state.stopped = true;
+  state.stopSequence = stopCounter++;
+  next(null, state);
 }
 
 function resetCounters() {
@@ -35,11 +35,11 @@ function Component() {
 
 _.extend(Component.prototype, {
   start: function (next) {
-    onStart.call(this, next);
+    onStart(this.state, next);
   },
   stop: function (next) {
-    onStop.call(this, next);
-  }
+    onStop(this.state, next);
+  },
 });
 
 function DepComponent(dependency) {
@@ -49,15 +49,15 @@ function DepComponent(dependency) {
 
 _.extend(DepComponent.prototype, {
   start: function (dependency, next) {
-    onStart.call(this, next);
+    onStart(this.state, next);
   },
   stop: function (next) {
-    onStop.call(this, next);
-  }
+    onStop(this.state, next);
+  },
 });
 
 module.exports = {
   Component: Component,
   DepComponent: DepComponent,
-  resetCounters: resetCounters
+  resetCounters: resetCounters,
 };

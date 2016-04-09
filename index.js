@@ -3,7 +3,7 @@ var _ = require('lodash');
 var Toposort = require('toposort-class');
 
 function startSequenceSync(components) {
-  var nameDeps = _(components).toPairs().map(function (pair) {
+  var nameDeps = _(components).pairs().map(function (pair) {
     return [_.head(pair), _.last(pair).dependsOn];
   });
   var withDeps = nameDeps.filter(_.last);
@@ -36,7 +36,6 @@ function stopSequence(components, next) {
 }
 
 function toComponentError(id, err) {
-  // eslint-disable-next-line
   err.message = id + ': ' + err.message;
   return err;
 }
@@ -56,7 +55,7 @@ function startComponent(ctx, component, id, next) {
   var args = dependencies.slice(0, argc - 1);
   args[argc - 1] = function (err, started) {
     if (err) return next(toComponentError(id, err));
-    return next(null, _.assign(ctx, toObject(id, started)));
+    next(null, _.assign(ctx, toObject(id, started)));
   };
 
   component.start.apply(component, args);
@@ -65,7 +64,7 @@ function startComponent(ctx, component, id, next) {
 function stopComponent(ctx, component, id, next) {
   component.stop(function (err) {
     if (err) return next(toComponentError(id, err));
-    return next();
+    next();
   });
 }
 
@@ -80,13 +79,13 @@ function system(components) {
     ctx = {};
     startSequence(components, function (err, sequence) {
       if (err) return next(err);
-      return async.reduce(sequence, ctx, function (acc, key, next) {
+      async.reduce(sequence, ctx, function (acc, key, next) {
         var component = components[key];
         if (!exists(component)) {
           return next(new Error('Unknown component: ' + key));
         }
         if (!component.start) return next(null, acc);
-        return startComponent(ctx, component, key, next);
+        startComponent(ctx, component, key, next);
       }, next);
     });
   }
@@ -94,20 +93,20 @@ function system(components) {
   function stop(next) {
     stopSequence(components, function (err, sequence) {
       if (err) return next(err);
-      return async.eachSeries(sequence, function (key, next) {
+      async.eachSeries(sequence, function (key, next) {
         var component = components[key];
         if (!components[key].stop) return next();
-        return stopComponent(ctx, component, key, next);
+        stopComponent(ctx, component, key, next);
       }, next);
     });
   }
 
   return {
     start: start,
-    stop: stop
+    stop: stop,
   };
 }
 
 module.exports = {
-  system: system
+  system: system,
 };
