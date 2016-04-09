@@ -3,7 +3,7 @@ var _ = require('lodash');
 var Toposort = require('toposort-class');
 
 function startSequenceSync(components) {
-  var nameDeps = _(components).pairs().map(function (pair) {
+  var nameDeps = _(components).toPairs().map(function (pair) {
     return [_.head(pair), _.last(pair).dependsOn];
   });
   var withDeps = nameDeps.filter(_.last);
