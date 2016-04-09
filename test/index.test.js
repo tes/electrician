@@ -345,6 +345,13 @@ describe('System', function () {
     });
   });
 
+  it('missing dependencies exposed as dependencies on the system', function () {
+    var comp = new DepComponent('missing');
+    var system = electrician.system({ 'comp': comp });
+
+    expect(system.dependencies).to.eql(['missing']);
+  });
+
   it('starts multiple components and nested systems', function () {
     var one = new Component();
     var two = new Component();
@@ -363,18 +370,33 @@ describe('System', function () {
     });
   });
 
-  it('starts multiple components and nested systems with dependencies', function () {
-    var one = new Component();
+  it('complains if nested systems do not have needed dependencies', function () {
+    var nested = electrician.system({
+      'one': new DepComponent('missing'),
+    });
+
+    var system = electrician.system({
+      'nested': nested,
+    });
+
+    return system.start().then(function () {
+      return Promise.reject(new Error('should have errored'));
+    }, function (err) {
+      expect(err.message).to.be('Unknown component: missing');
+    });
+  });
+
+  it('starts multiple components and nested systems using computed nested dependencies', function () {
+    var one = new DepComponent('two');
     var two = new Component();
     var nested = electrician.system({
       'one': one,
     });
 
-    nested.dependencies = ['two'];
     nested.oldStart = nested.start;
     nested.start = function (context) {
       nested.context = context;
-      nested.oldStart(context);
+      return nested.oldStart(context);
     };
 
     var system = electrician.system({
@@ -384,6 +406,34 @@ describe('System', function () {
 
     return system.start().then(function (context) {
       expect(one.state.startSequence).to.be.above(two.state.startSequence);
+      expect(nested.context).to.eql({ 'two': context.two });
+    });
+  });
+
+  it('starts multiple components and overrides nested systems with dependencies', function () {
+    var one = new Component();
+    var two = new Component();
+    var twoNested = new Component();
+    var nested = electrician.system({
+      'one': one,
+      'two': twoNested,
+    });
+
+    nested.dependencies = ['two'];
+    nested.oldStart = nested.start;
+    nested.start = function (context) {
+      nested.context = context;
+      return nested.oldStart(context);
+    };
+
+    var system = electrician.system({
+      'two': two,
+      'nested': nested,
+    });
+
+    return system.start().then(function (context) {
+      expect(one.state.startSequence).to.be.above(two.state.startSequence);
+      expect(twoNested.state.started).to.be(false);
       expect(nested.context).to.eql({ 'two': context.two });
     });
   });

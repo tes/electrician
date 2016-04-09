@@ -87,10 +87,17 @@ _.extend(DepComponent.prototype, {
   },
 });
 
+function makeComponentMap(map) {
+  return _.mapValues(map, function (val) {
+    return { dependencies: val };
+  });
+}
+
 module.exports = {
   Component: Component,
   DepComponent: DepComponent,
   makeFunctionComponent: makeFunctionComponent,
   makeGeneratorComponent: makeGeneratorComponent,
+  makeComponentMap: makeComponentMap,
   resetCounters: resetCounters,
 };

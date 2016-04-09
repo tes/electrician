@@ -5,6 +5,7 @@ var _ = require('lodash');
 var Promise = require('core-js/library/es6/promise');
 
 var findDepCycles = require('./lib/findDepCycles');
+var findMissingDeps = require('./lib/findMissingDeps');
 
 var alreadyStopped = Promise.reject(new Error('stop called before start'));
 var alreadyStarted = Promise.reject(new Error('start called before stop'));
@@ -61,6 +62,7 @@ function system(rawComponents) {
   var startingPromise = alreadyStopped;
   var stoppingPromise = Promise.resolve();
   var components = _.mapValues(rawComponents, normalizeComponent);
+  var missingDeps = findMissingDeps(components);
 
   function makeDepsPromise(action, actionDeps) {
     return Promise.all(_.map(actionDeps, function (dep) {
@@ -158,6 +160,7 @@ function system(rawComponents) {
   return {
     start: start,
     stop: stop,
+    dependencies: missingDeps,
   };
 }
 
