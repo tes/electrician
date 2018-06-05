@@ -1,3 +1,4 @@
+var debug = require('debug')('electrician');
 var async = require('async');
 var _ = require('lodash');
 var Toposort = require('toposort-class');
@@ -51,6 +52,7 @@ function startComponent(ctx, component, id, next) {
   var dependencies = _.map(depIds, function (depId) {
     return ctx[depId];
   });
+  debug('Resolving ' + dependencies.length + ' dependencies for component ' + id);
   var argc = component.start.length;
   var args = dependencies.slice(0, argc - 1);
   args[argc - 1] = function (err, started) {
@@ -62,6 +64,7 @@ function startComponent(ctx, component, id, next) {
 }
 
 function stopComponent(ctx, component, id, next) {
+  debug('Stopping component ' + id);
   component.stop(function (err) {
     if (err) return next(toComponentError(id, err));
     next();
@@ -81,6 +84,7 @@ function system(components) {
       if (err) return next(err);
       async.reduce(sequence, ctx, function (acc, key, next) {
         var component = components[key];
+        debug('Starting component ' + key);
         if (!exists(component)) {
           return next(new Error('Unknown component: ' + key));
         }
