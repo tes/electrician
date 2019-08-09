@@ -110,16 +110,30 @@ var system = electrician.system({explicit: true}, {
 });
 
 // START SYSTEM
+// callback version
 system.start(function (err) {
     if (err) return console.error(err);
     console.log('System started');
 });
 
+// promise version
+system
+    .start()
+    .then(() => console.log('System started'))
+    .catch(err => console.error(err))
+
 // STOP SYSTEM
+// callback version
 system.stop(function (err) {
     if (err) return console.error(err);
     console.log('System stopped');
 });
+
+// promise version
+system
+    .stop()
+    .then(() => console.log('System stoopped '))
+    .catch(err => console.error(err))
 ```
 
 ##### Output
@@ -235,32 +249,48 @@ System is essentially a component with no declared dependencies (no `dependsOn`
 
 #### start(next)
 
-Starts the system (all the components it is composed of) and calls `next` when
- done or on failure.
+Starts the system (all the components it is composed of).
+If `next` is passed in, calls `next` when done or on failure.
+If `next` is not passed in, returns a resolved Promise when done or a rejected one on failure.
 
 ##### Arguments
- * `next` Callback to notify of successful start or failure
+ * `next` Callback to notify of successful start or failure. If not passed in, method returns a promise.
 
 ##### Example
 ```js
+// callback version
 system.start(function (err, sys) {
     if (err) return console.error('System did not start.', err);
     console.log('System started.', sys);
 });
+
+// promise version
+system
+    .start()
+    .then(sys => console.log('System started', sys))
+    .catch(err => console.error('System did not start', err))
 ```
 
 #### stop(next)
 
-Stops the system (all the components it is composed of) and calls `next` when
- done or on failure.
+Stops the system (all the components it is composed of).
+If `next` is passed in, calls `next` when done or on failure.
+If `next` is not passed in, returns a resolved Promise when done or a rejected one on failure.
 
 ##### Arguments
- * `next` Callback to notify of successful stop or failure
+ * `next` Callback to notify of successful stop or failure. If not passed in, method returns a promise.
 
 ##### Example
 ```js
+// callback version
 system.stop(function (err) {
     if (err) return console.error('System did not stop.', err);
     console.log('System stopped.');
 });
+
+// promise version
+system
+    .stop()
+    .then(() => console.log('System stopped.'))
+    .catch(err => console.error('System did not stop.', err));
 ```
