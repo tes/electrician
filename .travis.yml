@@ -6,7 +6,7 @@ deploy:
   provider: npm
   email: clifton.cunningham@tes.co.uk
   api_key:
-    secure: ZdVWEbIPRqsnJnX/m6uxrjnF656QzQwKIKNMzc16UYk8GcACWeyHwATMaYEPdk70VmjeIqMVDNLVmg8LCFZ3asetoG4kOtPhsENcfK3nBklz5PGofpUowttOtKOwEP8pUR/QTrKvE6E29Dx6LDgnnqHIaVbemYT7dRy6E/PK+mA=
+    secure: k+d+GcHulimtE2WPcWfeeuZTYHonuCiPpm8DGNpSO8FJVXDOeH0T8swQ2oG8FlRXAt1KM95morGOX05of6za2tgh32Qn4qe7aTd/aMfvqGJPE1zs8OQmYkj2A6apCiSNdpUI97jrGdoRp50fzAq28GN2pdYVAMrW2/SQPi1Olx8=
   on:
     tags: true
     repo: tes/electrician
