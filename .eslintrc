@@ -1,9 +1,16 @@
 {
-  "extends": "airbnb/legacy",
   "rules": {
     "vars-on-top": 0,
     "id-length": 0,
     "func-names": 0,
-    "no-shadow": [2, {"allow": ["next", "err"]}]
-   }
+    "no-shadow": [2, {"allow": ["next", "err"]}],
+    "consistent-return": 0
+   },
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 8
+  }
 }

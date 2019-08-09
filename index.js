@@ -1,3 +1,4 @@
+var util = require('util');
 var debug = require('debug')('electrician');
 var async = require('async');
 var _ = require('lodash');
@@ -12,12 +13,12 @@ function startSequenceSync(components) {
 
   return _.uniq(
     withDeps
-    .reduce(function (acc, pair) {
-      return acc.add(_.head(pair), _.last(pair));
-    }, new Toposort())
-    .sort()
-    .reverse()
-    .concat(noDeps));
+      .reduce(function (acc, pair) {
+        return acc.add(_.head(pair), _.last(pair));
+      }, new Toposort())
+      .sort()
+      .reverse()
+      .concat(noDeps));
 }
 
 function startSequence(components, next) {
@@ -105,9 +106,20 @@ function system(components) {
     });
   }
 
+  function promiseWrapper(fn) {
+    return function (next) {
+      var expectingPromise = !next;
+      if (expectingPromise) {
+        var promisifiedFn = util.promisify(fn);
+        return promisifiedFn();
+      }
+      fn(next);
+    };
+  }
+
   return {
-    start: start,
-    stop: stop,
+    start: promiseWrapper(start),
+    stop: promiseWrapper(stop),
   };
 }
 
