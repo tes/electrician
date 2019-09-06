@@ -5,6 +5,7 @@ var _ = require('lodash');
 var components = require('./components');
 var Component = components.Component;
 var DepComponent = components.DepComponent;
+var PromiseComponent = components.PromiseComponent;
 
 var electrician = require('..');
 
@@ -240,6 +241,26 @@ describe('System', function () {
         done();
       });
     });
+
+    it('starts a single Promise component', function (done) {
+      var comp = new PromiseComponent();
+      var system = electrician.system({
+        'comp': comp,
+      });
+
+      system.start(function (err) {
+        if (err) return done(err);
+        expect(comp.state.started).to.be(true);
+        done();
+      });
+    });
+
+    it('starts multiple Promise components')
+    it('starts a mixed set of components, with callbacks and Promises')
+
+    it('stops multiple Promise components')
+    it('stops a mixed set of components, with callbacks and Promises')
+    
   });
 
   describe('Promise version', function () {

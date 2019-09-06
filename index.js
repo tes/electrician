@@ -48,21 +48,49 @@ function toObject(key, value) {
   return obj;
 }
 
-function startComponent(ctx, component, id, next) {
+function startWithPromise(component, id, componentStart, dependencies, ctx, next) {
+  componentStart.apply(component, dependencies)
+  .then(function(started) {
+    next(null, _.assign(ctx, toObject(id, started)));
+  })
+  .catch(function(err) {
+    next(toComponentError(id, err));
+  });
+}
+
+function startWithCallback(component, id, componentStart, dependencies, ctx, next) {
+  var arity = componentStart.length;
+  var args = dependencies.slice(0, arity - 1);
+  args[arity - 1] = function (err, started) {
+    if (err) return next(toComponentError(id, err));
+    next(null, _.assign(ctx, toObject(id, started)));
+  }
+  componentStart.apply(component, args);
+}
+
+function createStartWrapper(ctx, component, id, next) {
   var depIds = [].concat(component.dependsOn || []);
   var dependencies = _.map(depIds, function (depId) {
     return ctx[depId];
   });
   debug('Resolving ' + dependencies.length + ' dependencies for component ' + id);
-  var argc = component.start.length;
-  var args = dependencies.slice(0, argc - 1);
-  args[argc - 1] = function (err, started) {
-    if (err) return next(toComponentError(id, err));
-    next(null, _.assign(ctx, toObject(id, started)));
-  };
-
-  component.start.apply(component, args);
+  var componentStart = component.start;
+  var returningPromise = componentStart.length === depIds.length;
+  
+  return function() {
+    if (returningPromise) {
+      startWithPromise(component, id, componentStart, dependencies, ctx, next);
+    } else {
+      startWithCallback(component, id, componentStart, dependencies, ctx, next);
+    }
+  }
 }
+
+function startComponent(ctx, component, id, next) {
+  var wrapper = createStartWrapper(ctx, component,id, next);
+  wrapper(component.start);
+}
+
 
 function stopComponent(ctx, component, id, next) {
   debug('Stopping component ' + id);
@@ -106,7 +134,7 @@ function system(components) {
     });
   }
 
-  function promiseWrapper(fn) {
+  function createPromiseWrapper(fn) {
     return function (next) {
       var expectingPromise = !next;
       if (expectingPromise) {
@@ -118,8 +146,8 @@ function system(components) {
   }
 
   return {
-    start: promiseWrapper(start),
-    stop: promiseWrapper(stop),
+    start: createPromiseWrapper(start),
+    stop: createPromiseWrapper(stop),
   };
 }
 

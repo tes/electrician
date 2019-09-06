@@ -12,6 +12,12 @@ function initialState() {
   };
 }
 
+function resetCounters() {
+  startCounter = 1;
+  stopCounter = 1;
+}
+
+/* Callback versions */
 function onStart(state, next) {
   state.started = true;
   state.startSequence = startCounter++;
@@ -22,11 +28,6 @@ function onStop(state, next) {
   state.stopped = true;
   state.stopSequence = stopCounter++;
   next(null, state);
-}
-
-function resetCounters() {
-  startCounter = 1;
-  stopCounter = 1;
 }
 
 function Component() {
@@ -56,8 +57,36 @@ _.extend(DepComponent.prototype, {
   },
 });
 
+/* Promise versions */
+function promisifedOnStart(state) {
+  state.started = true;
+  state.startSequence = startCounter++;
+  return Promise.resolve(state);
+}
+
+function promisifedOnStop(state) {
+  state.stopped = true;
+  state.stopSequence = stopCounter++;
+  return Promise.resolve(state);
+}
+
+
+function PromiseComponent() {
+  this.state = initialState();
+}
+
+_.extend(PromiseComponent.prototype, {
+  start: function () {
+    return promisifedOnStart(this.state);
+  },
+  stop: function () {
+    return promisifedOnStop(this.state);
+  },
+})
+
 module.exports = {
   Component: Component,
   DepComponent: DepComponent,
+  PromiseComponent: PromiseComponent,
   resetCounters: resetCounters,
 };
