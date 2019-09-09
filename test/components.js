@@ -70,7 +70,6 @@ function promisifedOnStop(state) {
   return Promise.resolve(state);
 }
 
-
 function PromiseComponent() {
   this.state = initialState();
 }
@@ -84,9 +83,24 @@ _.extend(PromiseComponent.prototype, {
   },
 })
 
+function PromiseDepComponent(dependency) {
+  this.state = initialState();
+  this.dependsOn = dependency;
+}
+
+_.extend(PromiseDepComponent.prototype, {
+  start: function (dependency) {
+    return promisifedOnStart(this.state);
+  },
+  stop: function () {
+    return promisifedOnStop(this.state);
+  },
+})
+
 module.exports = {
   Component: Component,
   DepComponent: DepComponent,
   PromiseComponent: PromiseComponent,
+  PromiseDepComponent: PromiseDepComponent,
   resetCounters: resetCounters,
 };

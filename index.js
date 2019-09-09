@@ -48,24 +48,24 @@ function toObject(key, value) {
   return obj;
 }
 
-function startWithPromise(component, id, componentStart, dependencies, ctx, next) {
-  componentStart.apply(component, dependencies)
-  .then(function(started) {
-    next(null, _.assign(ctx, toObject(id, started)));
-  })
-  .catch(function(err) {
-    next(toComponentError(id, err));
-  });
+function startWithPromise(component, id, dependencies, ctx, next) {
+  component.start.apply(component, dependencies)
+    .then(function(started) {
+      next(null, _.assign(ctx, toObject(id, started)));
+    })
+    .catch(function(err) {
+      next(toComponentError(id, err));
+    });
 }
 
-function startWithCallback(component, id, componentStart, dependencies, ctx, next) {
-  var arity = componentStart.length;
+function startWithCallback(component, id, dependencies, ctx, next) {
+  var arity = component.start.length;
   var args = dependencies.slice(0, arity - 1);
   args[arity - 1] = function (err, started) {
     if (err) return next(toComponentError(id, err));
     next(null, _.assign(ctx, toObject(id, started)));
   }
-  componentStart.apply(component, args);
+  component.start.apply(component, args);
 }
 
 function createStartWrapper(ctx, component, id, next) {
@@ -78,10 +78,11 @@ function createStartWrapper(ctx, component, id, next) {
   var returningPromise = componentStart.length === depIds.length;
   
   return function() {
+    console.log('calling wrapper', id, returningPromise)
     if (returningPromise) {
-      startWithPromise(component, id, componentStart, dependencies, ctx, next);
+      startWithPromise(component, id, dependencies, ctx, next);
     } else {
-      startWithCallback(component, id, componentStart, dependencies, ctx, next);
+      startWithCallback(component, id, dependencies, ctx, next);
     }
   }
 }

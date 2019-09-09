@@ -6,6 +6,7 @@ var components = require('./components');
 var Component = components.Component;
 var DepComponent = components.DepComponent;
 var PromiseComponent = components.PromiseComponent;
+var PromiseDepComponent = components.PromiseDepComponent;
 
 var electrician = require('..');
 
@@ -255,8 +256,60 @@ describe('System', function () {
       });
     });
 
-    it('starts multiple Promise components')
-    it('starts a mixed set of components, with callbacks and Promises')
+    it('starts multiple Promise components', function (done) {
+      var one = new PromiseComponent();
+      var two = new PromiseComponent();
+      var system = electrician.system({
+        'one': one,
+        'two': two,
+      });
+
+      system.start(function (err) {
+        if (err) return done(err);
+        expect(one.state.started).to.be(true);
+        expect(two.state.started).to.be(true);
+        done();
+      });
+    });
+
+    it('starts a mixed set of components, with callbacks and Promises', function (done) {
+      var one = new Component();
+      var two = new PromiseComponent();
+      var system = electrician.system({
+        'one': one,
+        'two': two,
+      });
+
+      system.start(function (err, thing) {
+        if (err) return done(err);
+        expect(one.state.started).to.be(true);
+        expect(two.state.started).to.be(true);
+        done();
+      });
+    });
+
+    it.only('starts multiple Promise and callback components in dependency order', function (done) {
+      var one = new PromiseDepComponent('two');
+      var two = new Component();
+      var three = new Component('one');
+      var four = new PromiseComponent();
+      var system = electrician.system({
+        'one': one,
+        'two': two,
+        'three': three,
+        'four': four
+      });
+
+      system.start(function (err, t) {
+        if (err) return done(err);
+        expect(one.state.startSequence).to.be(2);
+        expect(two.state.startSequence).to.be(1);
+        expect(three.state.startSequence).to.be(3);
+        // standalone - order consequential
+        expect(four.state.startSequence).to.be(4);
+        done();
+      });
+    });
 
     it('stops multiple Promise components')
     it('stops a mixed set of components, with callbacks and Promises')
