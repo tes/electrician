@@ -3,3 +3,5 @@ coverage
 .DS_Store
 *.swp
 *.swo
+
+.idea/
