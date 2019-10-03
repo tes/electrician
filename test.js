@@ -55,8 +55,7 @@ const config = {
   },
   server:
   {
-    dependsOn: [ 'config', 'app', 'service' ],
-    start: (config, app, service, next) => { next();}
+    start: (config, app, service) => {}
   },
   metrics:
   {
