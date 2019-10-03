@@ -1,9 +1,27 @@
 {
-  "extends": "airbnb/legacy",
+  "extends": ["airbnb"],
+  "env": {
+    "node": true,
+    "browser": true
+  },
   "rules": {
-    "vars-on-top": 0,
     "id-length": 0,
-    "func-names": 0,
-    "no-shadow": [2, {"allow": ["next", "err"]}]
-   }
+    "max-len": 0,
+    "no-param-reassign": [2, { "props": false }],
+    "consistent-return": 0,
+    "arrow-parens": 0,
+    "no-underscore-dangle": 0,
+    "object-curly-newline": 0,
+    "comma-dangle": ["error", {
+      "arrays": "always-multiline",
+      "objects": "always-multiline",
+      "imports": "always-multiline",
+      "exports": "always-multiline",
+      "functions": "ignore"
+    }],
+    "prefer-destructuring": 0,
+    "require-await": 2,
+    "curly": [2, "all"],
+    "prefer-object-spread": 0
+  }
 }

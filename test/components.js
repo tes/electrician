@@ -1,63 +1,60 @@
-var _ = require('lodash');
+let startCounter;
+let stopCounter;
 
-var startCounter;
-var stopCounter;
+const initialState = () => ({
+  started: false,
+  stopped: false,
+  startSequence: 0,
+  stopSequence: 0,
+});
 
-function initialState() {
-  return {
-    started: false,
-    stopped: false,
-    startSequence: 0,
-    stopSequence: 0,
-  };
-}
-
-function onStart(state, next) {
-  state.started = true;
-  state.startSequence = startCounter++;
-  next(null, state);
-}
-
-function onStop(state, next) {
-  state.stopped = true;
-  state.stopSequence = stopCounter++;
-  next(null, state);
-}
-
-function resetCounters() {
+const resetCounters = () => {
   startCounter = 1;
   stopCounter = 1;
-}
+};
 
-function Component() {
-  this.state = initialState();
-}
+const Component = () => {
+  const state = initialState();
 
-_.extend(Component.prototype, {
-  start: function (next) {
-    onStart(this.state, next);
-  },
-  stop: function (next) {
-    onStop(this.state, next);
-  },
-});
+  return {
+    state,
+    start: next => {
+      state.started = true;
+      state.startSequence = startCounter;
+      startCounter += 1;
+      next(null, state);
+    },
+    stop: next => {
+      state.stopped = true;
+      state.stopSequence = stopCounter;
+      stopCounter += 1;
+      next(null, state);
+    },
+  };
+};
 
-function DepComponent(dependency) {
-  this.state = initialState();
-  this.dependsOn = dependency;
-}
-
-_.extend(DepComponent.prototype, {
-  start: function (dependency, next) {
-    onStart(this.state, next);
-  },
-  stop: function (next) {
-    onStop(this.state, next);
-  },
-});
+const DepComponent = (dependency1) => {
+  const state = initialState();
+  return {
+    state,
+    dependsOn: dependency1,
+    start: (dependency, next) => {
+      state.started = true;
+      state.startSequence = startCounter;
+      startCounter += 1;
+      next(null, state);
+    },
+    stop: next => {
+      state.stopped = true;
+      state.stopSequence = stopCounter;
+      stopCounter += 1;
+      next(null, state);
+    },
+  };
+};
 
 module.exports = {
-  Component: Component,
-  DepComponent: DepComponent,
-  resetCounters: resetCounters,
+  Component,
+  DepComponent,
+  resetCounters,
 };

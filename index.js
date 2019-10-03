@@ -1,116 +1,126 @@
-var debug = require('debug')('electrician');
-var async = require('async');
-var _ = require('lodash');
-var Toposort = require('toposort-class');
+const debug = require('debug')('electrician');
+const async = require('async');
+const _ = require('lodash');
+const Toposort = require('toposort-class');
 
-function startSequenceSync(components) {
-  var nameDeps = _(components).toPairs().map(function (pair) {
-    return [_.head(pair), _.last(pair).dependsOn];
-  });
-  var withDeps = nameDeps.filter(_.last);
-  var noDeps = nameDeps.difference(withDeps).map(_.head).value();
+const startSequenceSync = components => {
+  const nameDeps = _(components)
+    .toPairs()
+    .map(pair => [_.head(pair), _.last(pair).dependsOn]);
+  const withDeps = nameDeps.filter(_.last);
+  const noDeps = nameDeps.difference(withDeps)
+    .map(_.head)
+    .value();
 
   return _.uniq(
     withDeps
-    .reduce(function (acc, pair) {
-      return acc.add(_.head(pair), _.last(pair));
-    }, new Toposort())
-    .sort()
-    .reverse()
-    .concat(noDeps));
-}
+      .reduce((acc, pair) => acc.add(_.head(pair), _.last(pair)), new Toposort())
+      .sort()
+      .reverse()
+      .concat(noDeps)
+  );
+};
 
-function startSequence(components, next) {
+const startSequence = (components, next) => {
   try {
     next(null, startSequenceSync(components));
   } catch (err) {
     next(err);
   }
-}
+};
 
-function stopSequence(components, next) {
+const stopSequence = (components, next) => {
   try {
-    next(null, startSequenceSync(components).reverse());
+    next(null, startSequenceSync(components)
+      .reverse());
   } catch (err) {
     next(err);
   }
-}
+};
 
-function toComponentError(id, err) {
-  err.message = id + ': ' + err.message;
+const toComponentError = (id, err) => {
+  err.message = `${id}: ${err.message}`;
   return err;
-}
+};
 
-function toObject(key, value) {
-  var obj = {};
+const toObject = (key, value) => {
+  const obj = {};
   obj[key] = value;
   return obj;
-}
+};
 
-function startComponent(ctx, component, id, next) {
-  var depIds = [].concat(component.dependsOn || []);
-  var dependencies = _.map(depIds, function (depId) {
-    return ctx[depId];
-  });
-  debug('Resolving ' + dependencies.length + ' dependencies for component ' + id);
-  var argc = component.start.length;
-  var args = dependencies.slice(0, argc - 1);
-  args[argc - 1] = function (err, started) {
-    if (err) return next(toComponentError(id, err));
+const startComponent = (ctx, component, id, next) => {
+  const depIds = [].concat(component.dependsOn || []);
+  const dependencies = _.map(depIds, depId => ctx[depId]);
+  debug(`Resolving ${dependencies.length} dependencies for component ${id}`);
+  const argc = component.start.length;
+  const args = dependencies.slice(0, argc - 1);
+  args[argc - 1] = (err, started) => {
+    if (err) {
+      return next(toComponentError(id, err));
+    }
     next(null, _.assign(ctx, toObject(id, started)));
   };
 
-  component.start.apply(component, args);
-}
+  component.start(...args);
+};
 
-function stopComponent(ctx, component, id, next) {
-  debug('Stopping component ' + id);
-  component.stop(function (err) {
-    if (err) return next(toComponentError(id, err));
+const stopComponent = (ctx, component, id, next) => {
+  debug(`Stopping component ${id}`);
+  component.stop(err => {
+    if (err) {
+      return next(toComponentError(id, err));
+    }
     next();
   });
-}
+};
 
-function exists(obj) {
-  return obj !== null && obj !== undefined;
-}
+const exists = obj => obj !== null && obj !== undefined;
 
-function system(components) {
-  var ctx = {};
+const system = components => {
+  let ctx = {};
 
-  function start(next) {
+  const start = next => {
     ctx = {};
-    startSequence(components, function (err, sequence) {
-      if (err) return next(err);
-      async.reduce(sequence, ctx, function (acc, key, next) {
-        var component = components[key];
-        debug('Starting component ' + key);
+    startSequence(components, (err, sequence) => {
+      if (err) {
+        return next(err);
+      }
+      async.reduce(sequence, ctx, (acc, key, innerNext) => {
+        const component = components[key];
+        debug(`Starting component ${key}`);
         if (!exists(component)) {
-          return next(new Error('Unknown component: ' + key));
+          return innerNext(new Error(`Unknown component: ${key}`));
         }
-        if (!component.start) return next(null, acc);
-        startComponent(ctx, component, key, next);
+        if (!component.start) {
+          return innerNext(null, acc);
+        }
+        startComponent(ctx, component, key, innerNext);
       }, next);
     });
-  }
+  };
 
-  function stop(next) {
-    stopSequence(components, function (err, sequence) {
-      if (err) return next(err);
-      async.eachSeries(sequence, function (key, next) {
-        var component = components[key];
-        if (!components[key].stop) return next();
-        stopComponent(ctx, component, key, next);
+  const stop = next => {
+    stopSequence(components, (err, sequence) => {
+      if (err) {
+        return next(err);
+      }
+      async.eachSeries(sequence, (key, innerNext) => {
+        const component = components[key];
+        if (!components[key].stop) {
+          return innerNext();
+        }
+        stopComponent(ctx, component, key, innerNext);
       }, next);
     });
-  }
+  };
 
   return {
-    start: start,
-    stop: stop,
+    start,
+    stop,
   };
-}
+};
 
 module.exports = {
-  system: system,
+  system,
 };
