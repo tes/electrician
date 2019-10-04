@@ -1,12 +1,8 @@
 const expect = require('expect.js');
-const async = require('async');
-const _ = require('lodash');
-const components = require('./components');
-
-const Component = components.Component;
-const DepComponent = components.DepComponent;
 
 const electrician = require('..');
+
+const pause = () => new Promise((resolve) => setTimeout(() => resolve(), 10));
 
 describe('Electrician', () => {
   it('creates an empty system', () => {
@@ -15,217 +11,256 @@ describe('Electrician', () => {
 });
 
 describe('System', () => {
-  beforeEach(components.resetCounters);
-
   it('has start/stop methods', () => {
     const system = electrician.system({});
+
     expect(system.start).to.be.a(Function);
     expect(system.stop).to.be.a(Function);
   });
 
-  it('takes callbacks for start/stop', () => {
-    const system = electrician.system({});
-    expect(system.start.length).to.be(1);
-    expect(system.stop.length).to.be(1);
-  });
-
-  it('starts a single component', done => {
-    const comp = Component();
-    const system = electrician.system({ comp });
-
-    system.start(err => {
-      if (err) {
-        return done(err);
-      }
-      expect(comp.state.started).to.be(true);
-      done();
-    });
-  });
-
-  it('starts multiple components', done => {
-    const one = Component();
-    const two = Component();
-    const system = electrician.system({ one, two });
-
-    system.start(err => {
-      if (err) {
-        return done(err);
-      }
-      expect(one.state.started).to.be(true);
-      expect(two.state.started).to.be(true);
-      done();
-    });
-  });
-
-  it('starts multiple components in dependency order', done => {
-    const one = DepComponent('two');
-    const two = Component();
-    const three = Component();
-    const system = electrician.system({ one, two, three });
-
-    system.start(err => {
-      if (err) {
-        return done(err);
-      }
-      expect(one.state.startSequence).to.be(2);
-      expect(two.state.startSequence).to.be(1);
-      // standalone - order consequential
-      expect(three.state.startSequence).to.be(3);
-      done();
-    });
-  });
-
-  it('stops a single component', done => {
-    const comp = Component();
-    const system = electrician.system({ comp });
-
-    async.series([
-      system.start,
-      system.stop,
-    ], err => {
-      if (err) {
-        return done(err);
-      }
-      expect(comp.state.stopped).to.be(true);
-      done();
-    });
-  });
-
-  it('returns an error on stop if one is passed through on a single component', done => {
-    const comp = _.extend(Component(), {
-      stop: next => {
-        next(new Error('Test Error'));
+  it('starts a single component', async () => {
+    let started;
+    const comp = {
+      start: async () => {
+        await pause();
+        started = true;
       },
-    });
-    const system = electrician.system({ comp });
+    };
 
-    async.series([
-      system.start,
-      system.stop,
-    ], err => {
-      expect(err.message).to.be('comp: Test Error');
-      done();
-    });
+    const system = electrician.system({ comp });
+    await system.start();
+
+    expect(started).to.be(true);
   });
 
-  it('returns an error on start if one is passed through on a single component', done => {
-    const comp = _.extend(Component(), {
-      start: next => {
-        next(new Error('Test Error'));
+  it('starts multiple components', async () => {
+    const started = [false, false];
+    const one = {
+      start: async () => {
+        await pause();
+        started[0] = true;
       },
-    });
+    };
+    const two = {
+      start: async () => {
+        await pause();
+        started[1] = true;
+      },
+    };
+    const system = electrician.system({ one, two });
+    await system.start();
+
+    expect(started).to.eql([true, true]);
+  });
+
+  it('starts multiple components in dependency order', async () => {
+    const startSequence = [];
+    const one = {
+      start: async (two) => {
+        await pause(two);
+        startSequence.push('one');
+      },
+    };
+    const two = {
+      start: async () => {
+        await pause();
+        startSequence.push('two');
+      },
+    };
+    const three = {
+      start: async () => {
+        await pause();
+        startSequence.push('three');
+      },
+    };
+
+    const system = electrician.system({ one, two, three });
+    await system.start();
+
+    expect(startSequence).to.eql(['two', 'one', 'three']);
+  });
+
+  it('stops a single component', async () => {
+    let stopped;
+    const comp = {
+      start: async () => {
+        await pause();
+      },
+      stop: async () => {
+        await pause();
+        stopped = true;
+      },
+    };
+
+    const system = electrician.system({ comp });
+    await system.start();
+    await system.stop();
+
+    expect(stopped).to.be(true);
+  });
+
+  it('throws an error on stop if a single component throws an error', async () => {
+    const comp = {
+      start: async () => {
+        await pause();
+      },
+      stop: async () => {
+        await pause();
+        throw new Error('Test Error');
+      },
+    };
+
+    const system = electrician.system({ comp });
+    await system.start();
+
+    try {
+      await system.stop();
+      throw new Error('this should not be reached');
+    } catch (err) {
+      expect(err.message).to.be('comp: Test Error');
+    }
+  });
+
+  it('throws an error on start if a single component throws an error', async () => {
+    const comp = {
+      start: async () => {
+        await pause();
+        throw new Error('Test Error');
+      },
+    };
+
     const system = electrician.system({ comp });
 
-    system.start(err => {
+    try {
+      await system.start();
+      throw new Error('this should not be reached');
+    } catch (err) {
       expect(err.message).to.be('comp: Test Error');
-      done();
-    });
+    }
   });
 
-  it('stops multiple components', done => {
-    const one = Component();
-    const two = Component();
+  it('stops multiple components', async () => {
+    const stopped = [false, false];
+    const one = {
+      start: async () => {
+        await pause();
+      },
+      stop: async () => {
+        await pause();
+        stopped[0] = true;
+      },
+    };
+    const two = {
+      start: async () => {
+        await pause();
+      },
+      stop: async () => {
+        await pause();
+        stopped[1] = true;
+      },
+    };
     const system = electrician.system({ one, two });
+    await system.start();
+    await system.stop();
 
-    async.series([
-      system.start,
-      system.stop,
-    ], err => {
-      if (err) {
-        return done(err);
-      }
-      expect(one.state.stopped).to.be(true);
-      expect(two.state.stopped).to.be(true);
-      done();
-    });
+    expect(stopped).to.eql([true, true]);
   });
 
-  it('stops multiple components in dependency order', done => {
-    const one = DepComponent('two');
-    const two = Component();
-    const three = Component();
+  it('stops multiple components in dependency order', async () => {
+    const stopSequence = [];
+    const one = {
+      start: async (two) => {
+        await pause(two);
+      },
+      stop: async () => {
+        await pause();
+        stopSequence.push('one');
+      },
+    };
+    const two = {
+      start: async () => {
+        await pause();
+      },
+      stop: async () => {
+        await pause();
+        stopSequence.push('two');
+      },
+    };
+    const three = {
+      start: async () => {
+        await pause();
+      },
+      stop: async () => {
+        await pause();
+        stopSequence.push('three');
+      },
+    };
+
     const system = electrician.system({ one, two, three });
+    await system.start();
+    await system.stop();
 
-    async.series([
-      system.start,
-      system.stop,
-    ], err => {
-      if (err) {
-        return done(err);
-      }
-      expect(one.state.stopSequence).to.be(2);
-      expect(two.state.stopSequence).to.be(3);
-      // standalone - order consequential
-      expect(three.state.stopSequence).to.be(1);
-      done();
-    });
+    expect(stopSequence).to.eql(['three', 'one', 'two']);
   });
 
-  it('does not attempt to start components without start method', done => {
+  it('does not attempt to start components without start method', async () => {
     const system = electrician.system({ comp: {} });
+    const ctx = await system.start();
 
-    system.start((err, ctx) => {
-      if (err) {
-        return done(err);
-      }
-      expect(ctx.comp).to.not.be.ok();
-      done();
-    });
+    expect(ctx.comp).to.not.be.ok();
   });
 
-  it('does not attempt to stop components without stop method', done => {
-    const comp = _.omit(Component(), 'stop');
+  it('does not attempt to stop components without stop method', async () => {
+    const comp = {
+      start: async () => {
+        await pause();
+      },
+    };
+
     const system = electrician.system({ comp });
-
-    async.series([
-      system.start,
-      system.stop,
-    ], err => {
-      if (err) {
-        return done(err);
-      }
-      expect(comp.state.stopped).to.be(false);
-      done();
-    });
+    await system.start();
+    try {
+      await system.stop();
+    } catch (e) {
+      throw new Error('this should not be reached');
+    }
   });
 
-  it('returns error when wiring cyclical dependencies on start', done => {
+  it('returns error when wiring cyclical dependencies on start', async () => {
     const system = electrician.system({
-      A: DepComponent('B'),
-      B: DepComponent('A'),
+      A: {
+        start: async (B) => {
+          await pause(B);
+        },
+      },
+      B: {
+        start: async (A) => {
+          await pause(A);
+        },
+      },
     });
 
-    system.start(err => {
-      expect(err.message).to.match(/^Cyclic dependency found/);
-      done();
-    });
+    try {
+      await system.start();
+      throw new Error('this should not be reached');
+    } catch (e) {
+      expect(e.message).to.match(/^Cyclic dependency found/);
+    }
   });
 
-  it('returns error when wiring cyclical dependencies on stop', done => {
-    const A = Component();
-    const B = DepComponent('A');
-    const system = electrician.system({ A, B });
+  it('reports missing dependencies', async () => {
+    const comp = {
+      start: async (missing) => {
+        await pause(missing);
+      },
+    };
 
-    system.start(err => {
-      if (err) {
-        return done(err);
-      }
-
-      A.dependsOn = 'B';
-      system.stop(error => {
-        expect(error.message).to.match(/^Cyclic dependency found/);
-        done();
-      });
-    });
-  });
-
-  it('reports missing dependencies', done => {
-    const comp = DepComponent('missing');
     const system = electrician.system({ comp });
-
-    system.start(err => {
-      expect(err.message).to.be('Unknown component: missing');
-      done();
-    });
+    try {
+      await system.start();
+      throw new Error('this should not be reached');
+    } catch (e) {
+      expect(e.message).to.be('Unknown component: missing');
+    }
   });
 });
