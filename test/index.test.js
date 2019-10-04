@@ -21,6 +21,20 @@ describe('System', () => {
   it('starts a single component', async () => {
     let started;
     const comp = {
+      start: () => {
+        started = true;
+      },
+    };
+
+    const system = electrician.system({ comp });
+    await system.start();
+
+    expect(started).to.be(true);
+  });
+
+  it('starts a single component with async start function', async () => {
+    let started;
+    const comp = {
       start: async () => {
         await pause();
         started = true;
@@ -33,17 +47,34 @@ describe('System', () => {
     expect(started).to.be(true);
   });
 
+  it('stores the return values of start functions in the context', async () => {
+    const comp = {
+      start: async () => {
+        await pause();
+        return ['something', 'useful'];
+      },
+    };
+
+    const another = {
+      start: () => ({ a: 1 }),
+    };
+
+    const system = electrician.system({ comp, another });
+    const context = await system.start();
+
+    expect(context.comp).to.eql(['something', 'useful']);
+    expect(context.another).to.eql({ a: 1 });
+  });
+
   it('starts multiple components', async () => {
     const started = [false, false];
     const one = {
-      start: async () => {
-        await pause();
+      start: () => {
         started[0] = true;
       },
     };
     const two = {
-      start: async () => {
-        await pause();
+      start: () => {
         started[1] = true;
       },
     };
@@ -57,19 +88,17 @@ describe('System', () => {
     const startSequence = [];
     const one = {
       start: async (two) => {
-        await pause(two);
         startSequence.push('one');
+        await pause(two);
       },
     };
     const two = {
-      start: async () => {
-        await pause();
+      start: () => {
         startSequence.push('two');
       },
     };
     const three = {
-      start: async () => {
-        await pause();
+      start: () => {
         startSequence.push('three');
       },
     };
@@ -83,8 +112,24 @@ describe('System', () => {
   it('stops a single component', async () => {
     let stopped;
     const comp = {
-      start: async () => {
-        await pause();
+      start: () => {
+      },
+      stop: () => {
+        stopped = true;
+      },
+    };
+
+    const system = electrician.system({ comp });
+    await system.start();
+    await system.stop();
+
+    expect(stopped).to.be(true);
+  });
+
+  it('stops a single component with async stop function', async () => {
+    let stopped;
+    const comp = {
+      start: () => {
       },
       stop: async () => {
         await pause();
@@ -101,11 +146,9 @@ describe('System', () => {
 
   it('throws an error on stop if a single component throws an error', async () => {
     const comp = {
-      start: async () => {
-        await pause();
+      start: () => {
       },
-      stop: async () => {
-        await pause();
+      stop: () => {
         throw new Error('Test Error');
       },
     };
@@ -123,8 +166,7 @@ describe('System', () => {
 
   it('throws an error on start if a single component throws an error', async () => {
     const comp = {
-      start: async () => {
-        await pause();
+      start: () => {
         throw new Error('Test Error');
       },
     };
@@ -142,20 +184,16 @@ describe('System', () => {
   it('stops multiple components', async () => {
     const stopped = [false, false];
     const one = {
-      start: async () => {
-        await pause();
+      start: () => {
       },
-      stop: async () => {
-        await pause();
+      stop: () => {
         stopped[0] = true;
       },
     };
     const two = {
-      start: async () => {
-        await pause();
+      start: () => {
       },
-      stop: async () => {
-        await pause();
+      stop: () => {
         stopped[1] = true;
       },
     };
@@ -172,26 +210,21 @@ describe('System', () => {
       start: async (two) => {
         await pause(two);
       },
-      stop: async () => {
-        await pause();
+      stop: () => {
         stopSequence.push('one');
       },
     };
     const two = {
-      start: async () => {
-        await pause();
+      start: () => {
       },
-      stop: async () => {
-        await pause();
+      stop: () => {
         stopSequence.push('two');
       },
     };
     const three = {
-      start: async () => {
-        await pause();
+      start: () => {
       },
-      stop: async () => {
-        await pause();
+      stop: () => {
         stopSequence.push('three');
       },
     };
@@ -212,8 +245,7 @@ describe('System', () => {
 
   it('does not attempt to stop components without stop method', async () => {
     const comp = {
-      start: async () => {
-        await pause();
+      start: () => {
       },
     };
 

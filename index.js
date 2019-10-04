@@ -18,13 +18,13 @@ const startSequence = components => {
 
 const stopSequence = (components) => startSequence(components).reverse();
 
-const startComponent = async (ctx, component, id) => {
+const startComponent = (ctx, component, id) => {
   const dependencies = []
     .concat(component.start && functionArguments(component.start))
     .map(name => ctx[name]);
   debug(`Resolving ${dependencies.length} dependencies for component ${id}`);
   try {
-    await component.start(...dependencies);
+    return component.start(...dependencies);
   } catch (e) {
     e.message = `${id}: ${e.message}`;
     throw e;
@@ -42,10 +42,9 @@ const stopComponent = async (component, id) => {
 };
 
 const system = components => {
-  let ctx = {};
+  const ctx = {};
 
   const start = async () => {
-    ctx = {};
     const sequence = startSequence(components);
     for (const key of sequence) {
       const component = components[key];
@@ -54,7 +53,7 @@ const system = components => {
         throw new Error(`Unknown component: ${key}`);
       }
       if (component.start) {
-        await startComponent(ctx, component, key);
+        ctx[key] = await startComponent(ctx, component, key);
       }
     }
     return ctx;
