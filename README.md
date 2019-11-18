@@ -181,7 +181,6 @@ Function used to start the component. Electrician will call this function after
 
 When component is successfully started, an instance of it should be given to
  `next` callback so it can be passed to components depending on it.
- 
 #### Arguments
  * `[dependencies]` _(...Object)_ Dependency components
  * `next` Callback to export started component or notify of failure
