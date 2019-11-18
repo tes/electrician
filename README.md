@@ -17,7 +17,7 @@ order for a component to play well with electrician, it needs to support a
  (which is itself an electric component).
 
 When system is started, electrician ensures that all the components are started
- in correct depedency order, and it passes all dependencies down to components
+ in correct dependency order, and it passes all dependencies down to components
  start functions.
 
 Conversely when system is stopped all the components are stopped in reverse
