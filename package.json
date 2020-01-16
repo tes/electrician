@@ -11,7 +11,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "f(){ if [ \"$#\" -gt 0 ]; then mocha \"$@\"; else npm run coverage; fi; };f",
-    "coverage": "istanbul cover --include-all-sources true -x examples/** _mocha && istanbul check-coverage --statements 100"
+    "coverage": "nyc --check-coverage --lines 85 mocha -R spec test/* --exit"
   },
   "pre-commit": [
     "lint",
@@ -27,8 +27,8 @@
     "eslint": "^5.0.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "expect.js": "^0.3.1",
-    "istanbul": "^0.4.5",
     "mocha": "^6.2.0",
+    "nyc": "^15.0.0",
     "pre-commit": "^1.1.2"
   }
 }
