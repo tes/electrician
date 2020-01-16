@@ -17,7 +17,7 @@ order for a component to play well with electrician, it needs to support a
  (which is itself an electric component).
 
 When system is started, electrician ensures that all the components are started
- in correct depedency order, and it passes all dependencies down to components
+ in correct dependency order, and it passes all dependencies down to components
  start functions.
 
 Conversely when system is stopped all the components are stopped in reverse
@@ -179,7 +179,7 @@ Function used to start the component. Electrician will call this function after
  dependencies that you wish to be started before the component, but you don't
  intend on using directly (e.g. environment setup).
 
-When component is sucessfully started, an instance of it should be given to
+When component is successfully started, an instance of it should be given to
  `next` callback so it can be passed to components depending on it.
 
 #### Arguments
