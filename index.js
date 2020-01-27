@@ -54,7 +54,7 @@ function startComponent(ctx, component, id, next) {
     return ctx[depId];
   });
   debug('Resolving ' + dependencies.length + ' dependencies for component ' + id);
-  var argc = component.start.length;
+  var argc = depIds.length + 1;
   var args = dependencies.slice(0, argc - 1);
   args[argc - 1] = function (err, started) {
     if (err) return next(toComponentError(id, err));
